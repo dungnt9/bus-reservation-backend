@@ -1,0 +1,53 @@
+package com.example.be.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.be.model.Vehicles;
+import com.example.be.service.VehiclesService;
+
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/api/vehicles")
+public class VehiclesController {
+
+    @Autowired
+    private VehiclesService vehiclesService;
+
+    @PostMapping
+    public ResponseEntity<Vehicles> createVehicle(@Valid @RequestBody Vehicles vehicle) {
+        return ResponseEntity.ok(vehiclesService.createVehicle(vehicle));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Vehicles>> getAllVehicles() {
+        return ResponseEntity.ok(vehiclesService.getAllVehicles());
+    }
+
+    @GetMapping("/{vehicleId}")
+    public ResponseEntity<Vehicles> getVehicleById(@PathVariable Integer vehicleId) {
+        return ResponseEntity.ok(vehiclesService.getVehicleById(vehicleId));
+    }
+
+    @PutMapping("/{vehicleId}")
+    public ResponseEntity<Vehicles> updateVehicle(@PathVariable Integer vehicleId, @Valid @RequestBody Vehicles vehicle) {
+        return ResponseEntity.ok(vehiclesService.updateVehicle(vehicleId, vehicle));
+    }
+
+    @DeleteMapping("/{vehicleId}")
+    public ResponseEntity<Void> deleteVehicle(@PathVariable Integer vehicleId) {
+        vehiclesService.deleteVehicle(vehicleId);
+        return ResponseEntity.noContent().build();
+    }
+}
