@@ -27,12 +27,12 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<Users> createUser(@Valid @RequestBody Users user) {
-        return ResponseEntity.ok(userService.createUser(user));
+        return ResponseEntity.ok(userService.createUserForDriver(user));
     }
 
     @GetMapping
     public ResponseEntity<List<Users>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+        return ResponseEntity.ok(userService.findAllNotDeleted());
     }
 
     @GetMapping("/{userId}")
@@ -42,12 +42,12 @@ public class UserController {
 
     @PutMapping("/{userId}")
     public ResponseEntity<Users> updateUser(@PathVariable Integer userId, @Valid @RequestBody Users user) {
-        return ResponseEntity.ok(userService.updateUser(userId, user));
+        return ResponseEntity.ok(userService.updateUserForDriver(userId, user));
     }
 
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable Integer userId) {
-        userService.deleteUser(userId);
+        userService.softDeleteUserForDriver(userId);
         return ResponseEntity.noContent().build();
     }
 }

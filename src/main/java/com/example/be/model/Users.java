@@ -14,6 +14,7 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotBlank;
 
 @Data
 @NoArgsConstructor
@@ -26,9 +27,11 @@ public class Users {
     @Column(name = "user_id")
     private Integer userId;
 
+    @NotBlank(message = "Full name is required")
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
+    @NotBlank(message = "Phone number is required")
     @Column(name = "phone_number", nullable = false, length = 15)
     private String phoneNumber;
 

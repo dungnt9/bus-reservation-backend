@@ -16,6 +16,8 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Data
 @NoArgsConstructor
@@ -32,12 +34,15 @@ public class Drivers {
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
 
+    @NotBlank(message = "License number is required")
     @Column(name = "license_number", unique = true, nullable = false, length = 20)
     private String licenseNumber;
 
+    @NotBlank(message = "License class is required")
     @Column(name = "license_class", nullable = false, length = 10)
     private String licenseClass;
 
+    @NotNull(message = "License expiry date is required")
     @Column(name = "license_expiry", nullable = false)
     private LocalDate licenseExpiry;
 
