@@ -71,4 +71,7 @@ public class Trips {
     public enum TripStatus {
         in_progress, completed, cancelled
     }
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();  // Cập nhật thời gian xóa
+    }
 }

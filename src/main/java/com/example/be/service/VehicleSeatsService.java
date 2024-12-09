@@ -1,5 +1,6 @@
 package com.example.be.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,29 +16,35 @@ public class VehicleSeatsService {
     private VehicleSeatsRepository vehicleSeatsRepository;
 
     public VehicleSeats createVehicleSeat(VehicleSeats vehicleSeat) {
+        vehicleSeat.setCreatedAt(LocalDateTime.now());
         return vehicleSeatsRepository.save(vehicleSeat);
     }
 
     public List<VehicleSeats> getAllVehicleSeats() {
-        return vehicleSeatsRepository.findAll();
+        return vehicleSeatsRepository.findAllNotDeleted();
     }
 
     public VehicleSeats getVehicleSeatById(Integer vehicleSeatId) {
-        return vehicleSeatsRepository.findById(vehicleSeatId)
-                .orElseThrow(() -> new RuntimeException("Vehicle Seat not found"));
+        VehicleSeats vehicleSeat = vehicleSeatsRepository.findByIdNotDeleted(vehicleSeatId);
+        if (vehicleSeat == null) {
+            throw new RuntimeException("Vehicle Seat not found or has been deleted");
+        }
+        return vehicleSeat;
     }
 
     public VehicleSeats updateVehicleSeat(Integer vehicleSeatId, VehicleSeats vehicleSeatDetails) {
         VehicleSeats vehicleSeat = getVehicleSeatById(vehicleSeatId);
-        
+
         vehicleSeat.setVehicle(vehicleSeatDetails.getVehicle());
         vehicleSeat.setSeatNumber(vehicleSeatDetails.getSeatNumber());
+        vehicleSeat.setUpdatedAt(LocalDateTime.now());
 
         return vehicleSeatsRepository.save(vehicleSeat);
     }
 
     public void deleteVehicleSeat(Integer vehicleSeatId) {
         VehicleSeats vehicleSeat = getVehicleSeatById(vehicleSeatId);
-        vehicleSeatsRepository.delete(vehicleSeat);
+        vehicleSeat.markAsDeleted();
+        vehicleSeatsRepository.save(vehicleSeat);
     }
 }

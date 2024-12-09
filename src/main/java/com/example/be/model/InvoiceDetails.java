@@ -62,4 +62,7 @@ public class InvoiceDetails {
     public enum BookingStatus {
         pending, confirmed, cancelled, completed
     }
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();  // Cập nhật thời gian xóa
+    }
 }

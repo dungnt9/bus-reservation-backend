@@ -69,4 +69,7 @@ public class Users {
     public Integer getUserId() {
         return userId; // Assuming userId is the field name
     }
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();  // Cập nhật thời gian xóa
+    }
 }

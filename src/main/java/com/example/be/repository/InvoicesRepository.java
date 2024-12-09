@@ -2,9 +2,15 @@ package com.example.be.repository;
 
 import com.example.be.model.Invoices;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 
 @Repository
 public interface InvoicesRepository extends JpaRepository<Invoices, Integer> {
-    // Custom query methods can be added here if needed
+    @Query("SELECT i FROM Invoices i WHERE i.deletedAt IS NULL")
+    List<Invoices> findAllNotDeleted();
+
+    @Query("SELECT i FROM Invoices i WHERE i.invoiceId = :id AND i.deletedAt IS NULL")
+    Invoices findByIdNotDeleted(Integer id);
 }

@@ -47,4 +47,7 @@ public class Vehicles {
     public enum VehicleStatus {
         active, maintenance, retired
     }
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();  // Cập nhật thời gian xóa
+    }
 }

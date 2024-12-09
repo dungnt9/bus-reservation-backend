@@ -21,17 +21,20 @@ public class RouteSchedulesService {
     }
 
     public List<RouteSchedules> getAllRouteSchedules() {
-        return routeSchedulesRepository.findAll();
+        return routeSchedulesRepository.findAllNotDeleted();
     }
 
     public RouteSchedules getRouteScheduleById(Integer scheduleId) {
-        return routeSchedulesRepository.findById(scheduleId)
-                .orElseThrow(() -> new RuntimeException("Route Schedule not found"));
+        RouteSchedules routeSchedule = routeSchedulesRepository.findByIdNotDeleted(scheduleId);
+        if (routeSchedule == null) {
+            throw new RuntimeException("Route Schedule not found or has been deleted");
+        }
+        return routeSchedule;
     }
 
     public RouteSchedules updateRouteSchedule(Integer scheduleId, RouteSchedules routeScheduleDetails) {
         RouteSchedules routeSchedule = getRouteScheduleById(scheduleId);
-        
+
         routeSchedule.setRoute(routeScheduleDetails.getRoute());
         routeSchedule.setDepartureTime(routeScheduleDetails.getDepartureTime());
         routeSchedule.setIsDaily(routeScheduleDetails.getIsDaily());
@@ -43,7 +46,7 @@ public class RouteSchedulesService {
 
     public void deleteRouteSchedule(Integer scheduleId) {
         RouteSchedules routeSchedule = getRouteScheduleById(scheduleId);
-        routeSchedule.setDeletedAt(LocalDateTime.now());
+        routeSchedule.markAsDeleted();
         routeSchedulesRepository.save(routeSchedule);
     }
 }

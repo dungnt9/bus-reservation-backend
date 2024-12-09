@@ -1,11 +1,13 @@
 package com.example.be.service;
 
-import com.example.be.model.Trips;
-import com.example.be.repository.TripsRepository;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.example.be.model.Trips;
+import com.example.be.repository.TripsRepository;
 
 @Service
 public class TripsService {
@@ -14,22 +16,25 @@ public class TripsService {
     private TripsRepository tripsRepository;
 
     public Trips createTrip(Trips trip) {
+        trip.setCreatedAt(LocalDateTime.now());
         return tripsRepository.save(trip);
     }
 
     public List<Trips> getAllTrips() {
-        return tripsRepository.findAll();
+        return tripsRepository.findAllNotDeleted();
     }
 
     public Trips getTripById(Integer tripId) {
-        return tripsRepository.findById(tripId)
-                .orElseThrow(() -> new RuntimeException("Trip not found"));
+        Trips trip = tripsRepository.findByIdNotDeleted(tripId);
+        if (trip == null) {
+            throw new RuntimeException("Trip not found or has been deleted");
+        }
+        return trip;
     }
 
     public Trips updateTrip(Integer tripId, Trips tripDetails) {
         Trips trip = getTripById(tripId);
-        
-        // Update trip details using nested objects
+
         trip.setRouteSchedule(tripDetails.getRouteSchedule());
         trip.setVehicle(tripDetails.getVehicle());
         trip.setDriver(tripDetails.getDriver());
@@ -39,12 +44,14 @@ public class TripsService {
         trip.setActualDeparture(tripDetails.getActualDeparture());
         trip.setActualArrival(tripDetails.getActualArrival());
         trip.setTripStatus(tripDetails.getTripStatus());
-    
+        trip.setUpdatedAt(LocalDateTime.now());
+
         return tripsRepository.save(trip);
     }
 
     public void deleteTrip(Integer tripId) {
         Trips trip = getTripById(tripId);
-        tripsRepository.delete(trip);
+        trip.markAsDeleted();
+        tripsRepository.save(trip);
     }
 }

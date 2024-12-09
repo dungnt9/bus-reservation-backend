@@ -54,4 +54,7 @@ public class Routes {
     public enum RouteStatus {
         active, inactive
     }
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();  // Cập nhật thời gian xóa
+    }
 }

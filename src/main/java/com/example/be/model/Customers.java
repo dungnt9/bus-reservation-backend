@@ -41,4 +41,7 @@ public class Customers {
     public Integer getUserId() {
         return user != null ? user.getUserId() : null;
     }
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();  // Cập nhật thời gian xóa
+    }
 }

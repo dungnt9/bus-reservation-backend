@@ -51,4 +51,7 @@ public class TripSeats {
     public enum TripSeatStatus {
         available, booked
     }
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();  // Cập nhật thời gian xóa
+    }
 }

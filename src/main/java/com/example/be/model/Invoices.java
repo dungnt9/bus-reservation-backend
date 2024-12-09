@@ -57,4 +57,7 @@ public class Invoices {
     public enum PaymentStatus {
         pending, paid
     }
+    public void markAsDeleted() {
+        this.deletedAt = LocalDateTime.now();  // Cập nhật thời gian xóa
+    }
 }
