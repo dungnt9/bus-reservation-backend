@@ -2,13 +2,14 @@ package com.example.be.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
+
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,12 +23,10 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/vehicle-seats")
 public class VehicleSeatsController {
 
-    @Autowired
-    private VehicleSeatsService vehicleSeatsService;
+    private final VehicleSeatsService vehicleSeatsService;
 
-    @PostMapping
-    public ResponseEntity<VehicleSeats> createVehicleSeat(@Valid @RequestBody VehicleSeats vehicleSeat) {
-        return ResponseEntity.ok(vehicleSeatsService.createVehicleSeat(vehicleSeat));
+    public VehicleSeatsController(VehicleSeatsService vehicleSeatsService) {
+        this.vehicleSeatsService = vehicleSeatsService;
     }
 
     @GetMapping
@@ -38,6 +37,11 @@ public class VehicleSeatsController {
     @GetMapping("/{vehicleSeatId}")
     public ResponseEntity<VehicleSeats> getVehicleSeatById(@PathVariable Integer vehicleSeatId) {
         return ResponseEntity.ok(vehicleSeatsService.getVehicleSeatById(vehicleSeatId));
+    }
+
+    @PostMapping
+    public ResponseEntity<VehicleSeats> createVehicleSeat(@Valid @RequestBody VehicleSeats vehicleSeat) {
+        return ResponseEntity.ok(vehicleSeatsService.createVehicleSeat(vehicleSeat));
     }
 
     @PutMapping("/{vehicleSeatId}")

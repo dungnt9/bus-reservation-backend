@@ -1,33 +1,33 @@
 package com.example.be.controller;
 
-import java.util.List;
+import java.util.List; // thao tác với danh sách các phần tử
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.http.ResponseEntity; // phản hồi HTTP: Body, Headers, HTTP Status
+
+import org.springframework.web.bind.annotation.GetMapping; // Đánh dấu các phương thức xử lý HTTP request nào
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
+
+import org.springframework.web.bind.annotation.PathVariable; // lấy giá trị từ URL để làm tham số method
+import org.springframework.web.bind.annotation.RequestBody; // Lấy dữ liệu từ request body vào một object để create/update
+import org.springframework.web.bind.annotation.RequestMapping; // Base URL /api/customers cho tất cả các endpoint
+import org.springframework.web.bind.annotation.RestController; // nói class này là 1 RESTful Controller
 
 import com.example.be.model.Customers;
-import com.example.be.service.CustomersService;
+import com.example.be.service.CustomersService; // xử lý logic, được gọi trong các method của controller
 
-import jakarta.validation.Valid;
+import jakarta.validation.Valid; // kích hoạt validate annotation validation (@NotNull,...) được định nghĩa trong class
 
 @RestController
 @RequestMapping("/api/customers")
 public class CustomersController {
 
-    @Autowired
-    private CustomersService customersService;
+    private final CustomersService customersService; // Tiêm dependency bằng Constructor Injection
 
-    @PostMapping
-    public ResponseEntity<Customers> createCustomer(@Valid @RequestBody Customers customer) {
-        return ResponseEntity.ok(customersService.createCustomer(customer));
+    // Constructor injection
+    public CustomersController(CustomersService customersService) {
+        this.customersService = customersService;
     }
 
     @GetMapping
@@ -40,6 +40,11 @@ public class CustomersController {
         return ResponseEntity.ok(customersService.getCustomerById(customerId));
     }
 
+    @PostMapping // Xử lý yêu cầu HTTP POST
+    public ResponseEntity<Customers> createCustomer(@Valid @RequestBody Customers customer) {
+        return ResponseEntity.ok(customersService.createCustomer(customer));
+    }
+
     @PutMapping("/{customerId}")
     public ResponseEntity<Customers> updateCustomer(@PathVariable Integer customerId, @Valid @RequestBody Customers customer) {
         return ResponseEntity.ok(customersService.updateCustomer(customerId, customer));
@@ -48,6 +53,6 @@ public class CustomersController {
     @DeleteMapping("/{customerId}")
     public ResponseEntity<Void> deleteCustomer(@PathVariable Integer customerId) {
         customersService.deleteCustomer(customerId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent().build(); // Response với mã 204 No Content (không có dữ liệu trả về)
     }
 }

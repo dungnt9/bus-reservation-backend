@@ -2,13 +2,14 @@ package com.example.be.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
+
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,15 +20,13 @@ import com.example.be.service.RouteSchedulesService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/route-schedules")
+@RequestMapping("/api/route-chedules")
 public class RouteSchedulesController {
 
-    @Autowired
-    private RouteSchedulesService routeSchedulesService;
+    private final RouteSchedulesService routeSchedulesService;
 
-    @PostMapping
-    public ResponseEntity<RouteSchedules> createRouteSchedule(@Valid @RequestBody RouteSchedules routeSchedule) {
-        return ResponseEntity.ok(routeSchedulesService.createRouteSchedule(routeSchedule));
+    public RouteSchedulesController(RouteSchedulesService routeSchedulesService) {
+        this.routeSchedulesService = routeSchedulesService;
     }
 
     @GetMapping
@@ -38,6 +37,11 @@ public class RouteSchedulesController {
     @GetMapping("/{scheduleId}")
     public ResponseEntity<RouteSchedules> getRouteScheduleById(@PathVariable Integer scheduleId) {
         return ResponseEntity.ok(routeSchedulesService.getRouteScheduleById(scheduleId));
+    }
+
+    @PostMapping
+    public ResponseEntity<RouteSchedules> createRouteSchedule(@Valid @RequestBody RouteSchedules routeSchedule) {
+        return ResponseEntity.ok(routeSchedulesService.createRouteSchedule(routeSchedule));
     }
 
     @PutMapping("/{scheduleId}")

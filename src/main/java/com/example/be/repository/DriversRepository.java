@@ -1,8 +1,11 @@
 package com.example.be.repository;
 
 import com.example.be.model.Drivers;
+//interface cung cấp các phương thức thao tác với CSDL (như save(), findById(), delete()
 import org.springframework.data.jpa.repository.JpaRepository;
+//annotation @Query, viết các câu truy vấn tùy chỉnh.
 import org.springframework.data.jpa.repository.Query;
+//Annotation @Repository đánh dấu lớp là 1 repository, giúp Spring nhận diện và quản lý các bean truy cập CSDL.
 import org.springframework.stereotype.Repository;
 import java.util.List;
 

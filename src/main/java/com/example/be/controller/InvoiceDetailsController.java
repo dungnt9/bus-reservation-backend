@@ -2,13 +2,12 @@ package com.example.be.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,12 +21,10 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/invoice-details")
 public class InvoiceDetailsController {
 
-    @Autowired
-    private InvoiceDetailsService invoiceDetailsService;
+    private final InvoiceDetailsService invoiceDetailsService;
 
-    @PostMapping
-    public ResponseEntity<InvoiceDetails> createInvoiceDetail(@Valid @RequestBody InvoiceDetails invoiceDetail) {
-        return ResponseEntity.ok(invoiceDetailsService.createInvoiceDetail(invoiceDetail));
+    public InvoiceDetailsController(InvoiceDetailsService invoiceDetailsService) {
+        this.invoiceDetailsService = invoiceDetailsService;
     }
 
     @GetMapping
@@ -38,6 +35,11 @@ public class InvoiceDetailsController {
     @GetMapping("/{detailId}")
     public ResponseEntity<InvoiceDetails> getInvoiceDetailById(@PathVariable Integer detailId) {
         return ResponseEntity.ok(invoiceDetailsService.getInvoiceDetailById(detailId));
+    }
+
+    @PostMapping
+    public ResponseEntity<InvoiceDetails> createInvoiceDetail(@Valid @RequestBody InvoiceDetails detail) {
+        return ResponseEntity.ok(invoiceDetailsService.createInvoiceDetail(detail));
     }
 
     @PutMapping("/{detailId}")

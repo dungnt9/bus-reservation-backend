@@ -2,13 +2,14 @@ package com.example.be.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
+
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,12 +23,10 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/vehicles")
 public class VehiclesController {
 
-    @Autowired
-    private VehiclesService vehiclesService;
+    private final VehiclesService vehiclesService;
 
-    @PostMapping
-    public ResponseEntity<Vehicles> createVehicle(@Valid @RequestBody Vehicles vehicle) {
-        return ResponseEntity.ok(vehiclesService.createVehicle(vehicle));
+    public VehiclesController(VehiclesService vehiclesService) {
+        this.vehiclesService = vehiclesService;
     }
 
     @GetMapping
@@ -38,6 +37,11 @@ public class VehiclesController {
     @GetMapping("/{vehicleId}")
     public ResponseEntity<Vehicles> getVehicleById(@PathVariable Integer vehicleId) {
         return ResponseEntity.ok(vehiclesService.getVehicleById(vehicleId));
+    }
+
+    @PostMapping
+    public ResponseEntity<Vehicles> createVehicle(@Valid @RequestBody Vehicles vehicle) {
+        return ResponseEntity.ok(vehiclesService.createVehicle(vehicle));
     }
 
     @PutMapping("/{vehicleId}")

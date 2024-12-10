@@ -2,13 +2,14 @@ package com.example.be.controller;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
+
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,12 +23,10 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/routes")
 public class RoutesController {
 
-    @Autowired
-    private RoutesService routesService;
+    private final RoutesService routesService;
 
-    @PostMapping
-    public ResponseEntity<Routes> createRoute(@Valid @RequestBody Routes route) {
-        return ResponseEntity.ok(routesService.createRoute(route));
+    public RoutesController(RoutesService routesService) {
+        this.routesService = routesService;
     }
 
     @GetMapping
@@ -38,6 +37,11 @@ public class RoutesController {
     @GetMapping("/{routeId}")
     public ResponseEntity<Routes> getRouteById(@PathVariable Integer routeId) {
         return ResponseEntity.ok(routesService.getRouteById(routeId));
+    }
+
+    @PostMapping
+    public ResponseEntity<Routes> createRoute(@Valid @RequestBody Routes route) {
+        return ResponseEntity.ok(routesService.createRoute(route));
     }
 
     @PutMapping("/{routeId}")
