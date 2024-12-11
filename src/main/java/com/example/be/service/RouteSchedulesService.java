@@ -37,7 +37,6 @@ public class RouteSchedulesService {
 
         routeSchedule.setRoute(routeScheduleDetails.getRoute());
         routeSchedule.setDepartureTime(routeScheduleDetails.getDepartureTime());
-        routeSchedule.setIsDaily(routeScheduleDetails.getIsDaily());
         routeSchedule.setDayOfWeek(routeScheduleDetails.getDayOfWeek());
         routeSchedule.setUpdatedAt(LocalDateTime.now());
 

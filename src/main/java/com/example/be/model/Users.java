@@ -32,11 +32,14 @@ public class Users {
     private String fullName;
 
     @NotBlank(message = "Phone number is required")
-    @Column(name = "phone_number", nullable = false, length = 15)
+    @Column(name = "phone_number", nullable = false, length = 10)
     private String phoneNumber;
 
     @Column(name = "email", unique = true, length = 100)
     private String email;
+
+    @Column(name = "password_hash", length = 20)
+    private String password_hash;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "gender")

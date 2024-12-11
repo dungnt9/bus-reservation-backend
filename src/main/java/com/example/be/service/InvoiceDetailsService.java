@@ -38,9 +38,6 @@ public class InvoiceDetailsService {
         invoiceDetail.setInvoice(invoiceDetailDetails.getInvoice());
         invoiceDetail.setTrip(invoiceDetailDetails.getTrip());
         invoiceDetail.setTripSeat(invoiceDetailDetails.getTripSeat());
-        invoiceDetail.setQuantity(invoiceDetailDetails.getQuantity());
-        invoiceDetail.setUnitPrice(invoiceDetailDetails.getUnitPrice());
-        invoiceDetail.setBookingStatus(invoiceDetailDetails.getBookingStatus());
         invoiceDetail.setUpdatedAt(LocalDateTime.now());
 
         return invoiceDetailsRepository.save(invoiceDetail);

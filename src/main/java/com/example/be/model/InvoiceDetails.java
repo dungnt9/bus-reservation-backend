@@ -2,11 +2,11 @@ package com.example.be.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -40,15 +40,8 @@ public class InvoiceDetails {
     @JoinColumn(name = "trip_seat_id")
     private TripSeats tripSeat;
 
-    @Column(name = "quantity", nullable = false)
-    private Integer quantity;
-
-    @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal unitPrice;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "booking_status")
-    private BookingStatus bookingStatus;
+    @Column(name = "price", precision = 10, scale = 0, nullable = false)
+    private BigDecimal price = BigDecimal.ZERO;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -59,9 +52,6 @@ public class InvoiceDetails {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    public enum BookingStatus {
-        pending, confirmed, cancelled, completed
-    }
     public void markAsDeleted() {
         this.deletedAt = LocalDateTime.now();  // Cập nhật thời gian xóa
     }
