@@ -20,7 +20,7 @@ import com.example.be.service.RouteSchedulesService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/route-chedules")
+@RequestMapping("/api/route-schedules")
 public class RouteSchedulesController {
 
     private final RouteSchedulesService routeSchedulesService;

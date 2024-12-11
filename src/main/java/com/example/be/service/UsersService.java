@@ -53,6 +53,34 @@ public class UsersService {
     }
 
     @Transactional
+    public Users createUserForAssistant(Users user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+
+        // Validate required fields
+        validateUserFields(user);
+
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUserRole(Users.UserRole.assistant); // Ensure user is set as assistant
+        return usersRepository.save(user);
+    }
+
+    @Transactional
+    public Users createUserForAdmin(Users user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+
+        // Validate required fields
+        validateUserFields(user);
+
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUserRole(Users.UserRole.admin); // Ensure user is set as admin
+        return usersRepository.save(user);
+    }
+
+    @Transactional
     public Users updateUserForDriver(Integer userId, Users userDetails) {
         Users existingUser = getUserById(userId);
 
@@ -85,6 +113,38 @@ public class UsersService {
     }
 
     @Transactional
+    public Users updateUserForAssistant(Integer userId, Users userDetails) {
+        Users existingUser = getUserById(userId);
+
+        // Update only specific fields for assistant-related user
+        existingUser.setFullName(userDetails.getFullName());
+        existingUser.setPhoneNumber(userDetails.getPhoneNumber());
+        existingUser.setEmail(userDetails.getEmail());
+        existingUser.setGender(userDetails.getGender());
+        existingUser.setAddress(userDetails.getAddress());
+        existingUser.setDateOfBirth(userDetails.getDateOfBirth());
+        existingUser.setUpdatedAt(LocalDateTime.now());
+
+        return usersRepository.save(existingUser);
+    }
+
+    @Transactional
+    public Users updateUserForAdmin(Integer userId, Users userDetails) {
+        Users existingUser = getUserById(userId);
+
+        // Update only specific fields for admin-related user
+        existingUser.setFullName(userDetails.getFullName());
+        existingUser.setPhoneNumber(userDetails.getPhoneNumber());
+        existingUser.setEmail(userDetails.getEmail());
+        existingUser.setGender(userDetails.getGender());
+        existingUser.setAddress(userDetails.getAddress());
+        existingUser.setDateOfBirth(userDetails.getDateOfBirth());
+        existingUser.setUpdatedAt(LocalDateTime.now());
+
+        return usersRepository.save(existingUser);
+    }
+
+    @Transactional
     public void softDeleteUserForDriver(Integer userId) {
         Users user = getUserById(userId);
         user.markAsDeleted();
@@ -93,6 +153,20 @@ public class UsersService {
 
     @Transactional
     public void softDeleteUserForCustomer(Integer userId) {
+        Users user = getUserById(userId);
+        user.markAsDeleted();
+        usersRepository.save(user);
+    }
+
+    @Transactional
+    public void softDeleteUserForAssistant(Integer userId) {
+        Users user = getUserById(userId);
+        user.markAsDeleted();
+        usersRepository.save(user);
+    }
+
+    @Transactional
+    public void softDeleteUserForAdmin(Integer userId) {
         Users user = getUserById(userId);
         user.markAsDeleted();
         usersRepository.save(user);
