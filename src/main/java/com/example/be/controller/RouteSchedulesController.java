@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.be.model.RouteSchedules;
+import com.example.be.dto.RouteScheduleDTO;
 import com.example.be.service.RouteSchedulesService;
 
 import jakarta.validation.Valid;
@@ -30,22 +31,25 @@ public class RouteSchedulesController {
     }
 
     @GetMapping
-    public ResponseEntity<List<RouteSchedules>> getAllRouteSchedules() {
+    public ResponseEntity<List<RouteScheduleDTO>> getAllRouteSchedules() {
         return ResponseEntity.ok(routeSchedulesService.getAllRouteSchedules());
     }
 
     @GetMapping("/{scheduleId}")
-    public ResponseEntity<RouteSchedules> getRouteScheduleById(@PathVariable Integer scheduleId) {
+    public ResponseEntity<RouteScheduleDTO> getRouteScheduleById(@PathVariable Integer scheduleId) {
         return ResponseEntity.ok(routeSchedulesService.getRouteScheduleById(scheduleId));
     }
 
     @PostMapping
-    public ResponseEntity<RouteSchedules> createRouteSchedule(@Valid @RequestBody RouteSchedules routeSchedule) {
+    public ResponseEntity<RouteScheduleDTO> createRouteSchedule(@Valid @RequestBody RouteSchedules routeSchedule) {
         return ResponseEntity.ok(routeSchedulesService.createRouteSchedule(routeSchedule));
     }
 
     @PutMapping("/{scheduleId}")
-    public ResponseEntity<RouteSchedules> updateRouteSchedule(@PathVariable Integer scheduleId, @Valid @RequestBody RouteSchedules routeSchedule) {
+    public ResponseEntity<RouteScheduleDTO> updateRouteSchedule(
+            @PathVariable Integer scheduleId,
+            @Valid @RequestBody RouteSchedules routeSchedule
+    ) {
         return ResponseEntity.ok(routeSchedulesService.updateRouteSchedule(scheduleId, routeSchedule));
     }
 

@@ -2,53 +2,95 @@ package com.example.be.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.be.model.RouteSchedules;
+import com.example.be.model.Routes;
+import com.example.be.dto.RouteScheduleDTO;
 import com.example.be.repository.RouteSchedulesRepository;
 
 @Service
 public class RouteSchedulesService {
 
     private final RouteSchedulesRepository routeSchedulesRepository;
+    private final RoutesService routesService;
 
     // Constructor injection
-    public RouteSchedulesService(RouteSchedulesRepository routeSchedulesRepository) {
+    public RouteSchedulesService(
+            RouteSchedulesRepository routeSchedulesRepository,
+            RoutesService routesService
+    ) {
         this.routeSchedulesRepository = routeSchedulesRepository;
+        this.routesService = routesService;
     }
 
-    public RouteSchedules createRouteSchedule(RouteSchedules routeSchedule) {
+    @Transactional
+    public RouteScheduleDTO createRouteSchedule(RouteSchedules routeSchedule) {
         routeSchedule.setCreatedAt(LocalDateTime.now());
-        return routeSchedulesRepository.save(routeSchedule);
+        RouteSchedules savedSchedule = routeSchedulesRepository.save(routeSchedule);
+        return convertToDTO(savedSchedule);
     }
 
-    public List<RouteSchedules> getAllRouteSchedules() {
-        return routeSchedulesRepository.findAllNotDeleted();
+    public List<RouteScheduleDTO> getAllRouteSchedules() {
+        return routeSchedulesRepository.findAllNotDeleted().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
-    public RouteSchedules getRouteScheduleById(Integer scheduleId) {
+    public RouteScheduleDTO getRouteScheduleById(Integer scheduleId) {
         RouteSchedules routeSchedule = routeSchedulesRepository.findByIdNotDeleted(scheduleId);
         if (routeSchedule == null) {
             throw new RuntimeException("Route Schedule not found or has been deleted");
         }
-        return routeSchedule;
+        return convertToDTO(routeSchedule);
     }
 
-    public RouteSchedules updateRouteSchedule(Integer scheduleId, RouteSchedules routeScheduleDetails) {
-        RouteSchedules routeSchedule = getRouteScheduleById(scheduleId);
+    @Transactional
+    public RouteScheduleDTO updateRouteSchedule(Integer scheduleId, RouteSchedules routeScheduleDetails) {
+        RouteSchedules routeSchedule = routeSchedulesRepository.findByIdNotDeleted(scheduleId);
+        if (routeSchedule == null) {
+            throw new RuntimeException("Route Schedule not found or has been deleted");
+        }
 
         routeSchedule.setRoute(routeScheduleDetails.getRoute());
         routeSchedule.setDepartureTime(routeScheduleDetails.getDepartureTime());
-        routeSchedule.setDayOfWeek(routeScheduleDetails.getDayOfWeek());
+        routeSchedule.setDaysOfWeek(routeScheduleDetails.getDaysOfWeek());
         routeSchedule.setUpdatedAt(LocalDateTime.now());
 
-        return routeSchedulesRepository.save(routeSchedule);
+        RouteSchedules updatedSchedule = routeSchedulesRepository.save(routeSchedule);
+        return convertToDTO(updatedSchedule);
     }
 
+    @Transactional
     public void deleteRouteSchedule(Integer scheduleId) {
-        RouteSchedules routeSchedule = getRouteScheduleById(scheduleId);
+        RouteSchedules routeSchedule = routeSchedulesRepository.findByIdNotDeleted(scheduleId);
+        if (routeSchedule == null) {
+            throw new RuntimeException("Route Schedule not found or has been deleted");
+        }
         routeSchedule.markAsDeleted();
         routeSchedulesRepository.save(routeSchedule);
+    }
+
+    // Conversion method to DTO
+    private RouteScheduleDTO convertToDTO(RouteSchedules routeSchedule) {
+        RouteScheduleDTO dto = new RouteScheduleDTO();
+
+        dto.setScheduleId(routeSchedule.getScheduleId());
+
+        // Handle route information with soft delete consideration
+        Routes route = routeSchedule.getRoute();
+        if (route != null) {
+            dto.setRouteId(route.getRouteId());
+            dto.setRouteName(route.getRouteName());
+        }
+
+        // Set schedule-specific information
+        dto.setDepartureTime(routeSchedule.getDepartureTime());
+        dto.setDaysOfWeek(routeSchedule.getDaysOfWeek());
+
+        return dto;
     }
 }
