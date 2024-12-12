@@ -3,7 +3,6 @@ package com.example.be.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.be.model.InvoiceDetails;
@@ -12,8 +11,12 @@ import com.example.be.repository.InvoiceDetailsRepository;
 @Service
 public class InvoiceDetailsService {
 
-    @Autowired
-    private InvoiceDetailsRepository invoiceDetailsRepository;
+    private final InvoiceDetailsRepository invoiceDetailsRepository;
+
+    // Constructor injection
+    public InvoiceDetailsService(InvoiceDetailsRepository invoiceDetailsRepository) {
+        this.invoiceDetailsRepository = invoiceDetailsRepository;
+    }
 
     public InvoiceDetails createInvoiceDetail(InvoiceDetails invoiceDetail) {
         invoiceDetail.setCreatedAt(LocalDateTime.now());

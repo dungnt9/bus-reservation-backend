@@ -3,7 +3,6 @@ package com.example.be.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.be.model.Routes;
@@ -12,8 +11,12 @@ import com.example.be.repository.RoutesRepository;
 @Service
 public class RoutesService {
 
-    @Autowired
-    private RoutesRepository routesRepository;
+    private final RoutesRepository routesRepository;
+
+    // Constructor injection
+    public RoutesService(RoutesRepository routesRepository) {
+        this.routesRepository = routesRepository;
+    }
 
     public Routes createRoute(Routes route) {
         route.setCreatedAt(LocalDateTime.now());
