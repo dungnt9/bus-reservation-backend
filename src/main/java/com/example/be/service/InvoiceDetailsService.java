@@ -39,7 +39,6 @@ public class InvoiceDetailsService {
         InvoiceDetails invoiceDetail = getInvoiceDetailById(detailId);
 
         invoiceDetail.setInvoice(invoiceDetailDetails.getInvoice());
-        invoiceDetail.setTrip(invoiceDetailDetails.getTrip());
         invoiceDetail.setTripSeat(invoiceDetailDetails.getTripSeat());
         invoiceDetail.setUpdatedAt(LocalDateTime.now());
 

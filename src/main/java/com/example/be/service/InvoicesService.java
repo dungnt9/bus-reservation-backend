@@ -97,7 +97,7 @@ public class InvoicesService {
                 customerInfo,
                 invoice.getTotalPrice(),
                 invoice.getPaymentStatus().toString(),
-                invoice.getPaymentMethod(),
+                invoice.getPaymentMethod().toString(),
                 invoice.getInvoiceDate()
         );
     }

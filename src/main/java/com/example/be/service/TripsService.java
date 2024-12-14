@@ -39,7 +39,6 @@ public class TripsService {
         Trips trip = getTripById(tripId);
 
         trip.setRouteSchedule(tripDetails.getRouteSchedule());
-        trip.setVehicle(tripDetails.getVehicle());
         trip.setDriver(tripDetails.getDriver());
         trip.setAssistant(tripDetails.getAssistant());
         trip.setScheduledDeparture(tripDetails.getScheduledDeparture());

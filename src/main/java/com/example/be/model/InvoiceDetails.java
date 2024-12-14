@@ -33,15 +33,8 @@ public class InvoiceDetails {
     private Invoices invoice;
 
     @ManyToOne
-    @JoinColumn(name = "trip_id")
-    private Trips trip;
-
-    @ManyToOne
     @JoinColumn(name = "trip_seat_id")
     private TripSeats tripSeat;
-
-    @Column(name = "price", precision = 10, scale = 0, nullable = false)
-    private BigDecimal price = BigDecimal.ZERO;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -32,10 +32,6 @@ public class Trips {
     private RouteSchedules routeSchedule;
 
     @ManyToOne
-    @JoinColumn(name = "vehicle_id", nullable = false)
-    private Vehicles vehicle;
-
-    @ManyToOne
     @JoinColumn(name = "driver_id", nullable = false)
     private Drivers driver;
 

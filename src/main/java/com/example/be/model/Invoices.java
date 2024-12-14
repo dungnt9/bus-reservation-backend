@@ -39,8 +39,9 @@ public class Invoices {
     @Column(name = "payment_status", nullable = false)
     private PaymentStatus paymentStatus;
 
-    @Column(name = "payment_method", nullable = false, length = 50)
-    private String paymentMethod;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false)
+    private PaymentMethod paymentMethod;
 
     @Column(name = "invoice_date", nullable = false)
     private LocalDateTime invoiceDate;
@@ -57,6 +58,11 @@ public class Invoices {
     public enum PaymentStatus {
         pending, paid
     }
+
+    public enum PaymentMethod {
+        cash, card
+    }
+
     public void markAsDeleted() {
         this.deletedAt = LocalDateTime.now();  // Cập nhật thời gian xóa
     }
