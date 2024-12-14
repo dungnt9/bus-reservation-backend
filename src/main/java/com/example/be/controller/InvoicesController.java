@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.be.model.Invoices;
+import com.example.be.dto.InvoiceDTO;
 import com.example.be.service.InvoicesService;
 
 import jakarta.validation.Valid;
@@ -30,22 +31,22 @@ public class InvoicesController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Invoices>> getAllInvoices() {
+    public ResponseEntity<List<InvoiceDTO>> getAllInvoices() {
         return ResponseEntity.ok(invoicesService.getAllInvoices());
     }
 
     @GetMapping("/{invoiceId}")
-    public ResponseEntity<Invoices> getInvoiceById(@PathVariable Integer invoiceId) {
+    public ResponseEntity<InvoiceDTO> getInvoiceById(@PathVariable Integer invoiceId) {
         return ResponseEntity.ok(invoicesService.getInvoiceById(invoiceId));
     }
 
     @PostMapping
-    public ResponseEntity<Invoices> createInvoice(@Valid @RequestBody Invoices invoice) {
+    public ResponseEntity<InvoiceDTO> createInvoice(@Valid @RequestBody Invoices invoice) {
         return ResponseEntity.ok(invoicesService.createInvoice(invoice));
     }
 
     @PutMapping("/{invoiceId}")
-    public ResponseEntity<Invoices> updateInvoice(@PathVariable Integer invoiceId, @Valid @RequestBody Invoices invoice) {
+    public ResponseEntity<InvoiceDTO> updateInvoice(@PathVariable Integer invoiceId, @Valid @RequestBody Invoices invoice) {
         return ResponseEntity.ok(invoicesService.updateInvoice(invoiceId, invoice));
     }
 
