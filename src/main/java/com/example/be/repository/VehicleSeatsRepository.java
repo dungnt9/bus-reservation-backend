@@ -18,4 +18,7 @@ public interface VehicleSeatsRepository extends JpaRepository<VehicleSeats, Inte
     // New method to find seats by vehicle
     @Query("SELECT v FROM VehicleSeats v WHERE v.vehicle = :vehicle AND v.deletedAt IS NULL")
     List<VehicleSeats> findByVehicle(Vehicles vehicle);
+
+    @Query("SELECT v FROM VehicleSeats v WHERE v.vehicle.vehicleId = :vehicleId AND v.deletedAt IS NULL")
+    List<VehicleSeats> findByVehicleIdNotDeleted(Integer vehicleId);
 }
