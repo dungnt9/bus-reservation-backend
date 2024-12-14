@@ -16,37 +16,36 @@ import org.springframework.web.bind.annotation.RestController; //nói class này
 
 import com.example.be.model.Admins;
 import com.example.be.service.AdminsService;
+import com.example.be.dto.AdminDTO;
 
 import jakarta.validation.Valid; //kích hoạt validate annotation validation (@NotNull,...) được định nghĩa trong class
 
 @RestController
 @RequestMapping("/api/admins")
 public class AdminsController {
-
     private final AdminsService adminsService;
 
-    // Constructor injection
     public AdminsController(AdminsService adminsService) {
         this.adminsService = adminsService;
     }
 
     @GetMapping
-    public ResponseEntity<List<Admins>> getAllAdmins() {
-        return ResponseEntity.ok(adminsService.getAllAdmins());
+    public ResponseEntity<List<AdminDTO>> getAllAdmins() {
+        return ResponseEntity.ok(adminsService.getAllAdminsDTO());
     }
 
     @GetMapping("/{adminId}")
-    public ResponseEntity<Admins> getAdminById(@PathVariable Integer adminId) {
-        return ResponseEntity.ok(adminsService.getAdminById(adminId));
+    public ResponseEntity<AdminDTO> getAdminById(@PathVariable Integer adminId) {
+        return ResponseEntity.ok(adminsService.getAdminDTOById(adminId));
     }
 
-    @PostMapping   //Xử lý yêu cầu HTTP POST
-    public ResponseEntity<Admins> createAdmin(@Valid @RequestBody Admins admin) {
+    @PostMapping
+    public ResponseEntity<AdminDTO> createAdmin(@Valid @RequestBody Admins admin) {
         return ResponseEntity.ok(adminsService.createAdmin(admin));
     }
 
     @PutMapping("/{adminId}")
-    public ResponseEntity<Admins> updateAdmin(@PathVariable Integer adminId, @Valid @RequestBody Admins admin) {
+    public ResponseEntity<AdminDTO> updateAdmin(@PathVariable Integer adminId, @Valid @RequestBody Admins admin) {
         return ResponseEntity.ok(adminsService.updateAdmin(adminId, admin));
     }
 

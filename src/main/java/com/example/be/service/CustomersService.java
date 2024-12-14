@@ -1,12 +1,15 @@
+// CustomersService.java
 package com.example.be.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.example.be.dto.CustomerDTO;
 import com.example.be.model.Customers;
 import com.example.be.model.Users;
 import com.example.be.repository.CustomersRepository;
@@ -19,38 +22,55 @@ public class CustomersService {
     private final UsersRepository usersRepository;
     private final UsersService usersService;
 
-    // Constructor injection
-    public CustomersService(
-            CustomersRepository customersRepository,
-            UsersRepository usersRepository,
-            UsersService usersService
-    ) {
+    public CustomersService(CustomersRepository customersRepository,
+                            UsersRepository usersRepository,
+                            UsersService usersService) {
         this.customersRepository = customersRepository;
         this.usersRepository = usersRepository;
         this.usersService = usersService;
     }
 
+    protected CustomerDTO convertToDTO(Customers customer) {
+        CustomerDTO dto = new CustomerDTO();
+        dto.setCustomerId(customer.getCustomerId());
+        dto.setUserId(customer.getUser().getUserId());
+        dto.setFullName(customer.getUser().getFullName());
+        dto.setPhoneNumber(customer.getUser().getPhoneNumber());
+        dto.setEmail(customer.getUser().getEmail());
+        dto.setPassword_hash(customer.getUser().getPassword_hash());
+        dto.setGender(customer.getUser().getGender() != null ? customer.getUser().getGender().toString() : null);
+        dto.setAddress(customer.getUser().getAddress());
+        dto.setDateOfBirth(customer.getUser().getDateOfBirth());
+        return dto;
+    }
+
+    public List<CustomerDTO> getAllCustomersDTO() {
+        return getAllCustomers().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public CustomerDTO getCustomerDTOById(Integer customerId) {
+        return convertToDTO(getCustomerById(customerId));
+    }
+
+    public CustomerDTO createCustomer(Customers customer) {
+        return convertToDTO(createCustomerEntity(customer));
+    }
+
     @Transactional
-    public Customers createCustomer(Customers customer) {
-        // Validate required fields
+    protected Customers createCustomerEntity(Customers customer) {
         validateCustomerFields(customer);
-
-        // First, create the user associated with the customer
         Users user = usersService.createUserForCustomer(customer.getUser());
-
-        // Set the created user to the customer
         customer.setUser(user);
         customer.setCreatedAt(LocalDateTime.now());
-
         return customersRepository.save(customer);
     }
 
-    private void validateCustomerFields(Customers customer) {
+    protected void validateCustomerFields(Customers customer) {
         if (customer == null) {
             throw new IllegalArgumentException("Customer information cannot be null");
         }
-
-        // Validate user fields
         Users user = customer.getUser();
         if (user == null ||
                 !StringUtils.hasText(user.getFullName()) ||
@@ -59,34 +79,26 @@ public class CustomersService {
         }
     }
 
-    @Transactional
-    public Customers updateCustomer(Integer customerId, Customers customerDetails) {
-        // Retrieve existing customer
-        Customers existingCustomer = getCustomerById(customerId);
+    public CustomerDTO updateCustomer(Integer customerId, Customers customerDetails) {
+        return convertToDTO(updateCustomerEntity(customerId, customerDetails));
+    }
 
-        // Update user details first
+    @Transactional
+    protected Customers updateCustomerEntity(Integer customerId, Customers customerDetails) {
+        Customers existingCustomer = getCustomerById(customerId);
         Users updatedUser = usersService.updateUserForCustomer(
                 existingCustomer.getUser().getUserId(),
                 customerDetails.getUser()
         );
-
-        // Update customer-specific details
-        existingCustomer.setUser(updatedUser);
         existingCustomer.setUpdatedAt(LocalDateTime.now());
-
-        // Save updated customer
         return customersRepository.save(existingCustomer);
     }
 
     @Transactional
     public void deleteCustomer(Integer customerId) {
         Customers customer = getCustomerById(customerId);
-
-        // Soft delete customer
         customer.markAsDeleted();
         customersRepository.save(customer);
-
-        // Soft delete associated user
         usersService.softDeleteUserForCustomer(customer.getUser().getUserId());
     }
 

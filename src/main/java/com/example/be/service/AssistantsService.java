@@ -1,12 +1,15 @@
+// AssistantsService.java
 package com.example.be.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.example.be.dto.AssistantDTO;
 import com.example.be.model.Assistants;
 import com.example.be.model.Users;
 import com.example.be.repository.AssistantsRepository;
@@ -28,23 +31,46 @@ public class AssistantsService {
         this.usersService = usersService;
     }
 
+    protected AssistantDTO convertToDTO(Assistants assistant) {
+        AssistantDTO dto = new AssistantDTO();
+        dto.setAssistantId(assistant.getAssistantId());
+        dto.setUserId(assistant.getUser().getUserId());
+        dto.setFullName(assistant.getUser().getFullName());
+        dto.setPhoneNumber(assistant.getUser().getPhoneNumber());
+        dto.setEmail(assistant.getUser().getEmail());
+        dto.setPassword_hash(assistant.getUser().getPassword_hash());
+        dto.setGender(assistant.getUser().getGender() != null ? assistant.getUser().getGender().toString() : null);
+        dto.setAddress(assistant.getUser().getAddress());
+        dto.setDateOfBirth(assistant.getUser().getDateOfBirth());
+        dto.setAssistantStatus(assistant.getAssistantStatus().toString());
+        return dto;
+    }
+
+    public List<AssistantDTO> getAllAssistantsDTO() {
+        return getAllAssistants().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public AssistantDTO getAssistantDTOById(Integer assistantId) {
+        return convertToDTO(getAssistantById(assistantId));
+    }
+
+    public AssistantDTO createAssistant(Assistants assistant) {
+        return convertToDTO(createAssistantEntity(assistant));
+    }
+
     @Transactional
-    public Assistants createAssistant(Assistants assistant) {
-        // Validate required fields
+    protected Assistants createAssistantEntity(Assistants assistant) {
         validateAssistantFields(assistant);
-
-        // First, create the user associated with the assistant
         Users user = usersService.createUserForAssistant(assistant.getUser());
-
-        // Set the created user to the assistant
         assistant.setUser(user);
         assistant.setCreatedAt(LocalDateTime.now());
-        assistant.setAssistantStatus(Assistants.AssistantStatus.available); // Default status
-
+        assistant.setAssistantStatus(Assistants.AssistantStatus.available);
         return assistantsRepository.save(assistant);
     }
 
-    private void validateAssistantFields(Assistants assistant) {
+    protected void validateAssistantFields(Assistants assistant) {
         if (assistant == null) {
             throw new IllegalArgumentException("Assistant information cannot be null");
         }
@@ -58,34 +84,27 @@ public class AssistantsService {
         }
     }
 
-    @Transactional
-    public Assistants updateAssistant(Integer assistantId, Assistants assistantDetails) {
-        // Retrieve existing assistant
-        Assistants existingAssistant = getAssistantById(assistantId);
+    public AssistantDTO updateAssistant(Integer assistantId, Assistants assistantDetails) {
+        return convertToDTO(updateAssistantEntity(assistantId, assistantDetails));
+    }
 
-        // Update user details first
+    @Transactional
+    protected Assistants updateAssistantEntity(Integer assistantId, Assistants assistantDetails) {
+        Assistants existingAssistant = getAssistantById(assistantId);
         Users updatedUser = usersService.updateUserForAssistant(
                 existingAssistant.getUser().getUserId(),
                 assistantDetails.getUser()
         );
-
-        // Update assistant-specific details
         existingAssistant.setAssistantStatus(assistantDetails.getAssistantStatus());
         existingAssistant.setUpdatedAt(LocalDateTime.now());
-
-        // Save updated assistant
         return assistantsRepository.save(existingAssistant);
     }
 
     @Transactional
     public void deleteAssistant(Integer assistantId) {
         Assistants assistant = getAssistantById(assistantId);
-
-        // Soft delete assistant
         assistant.markAsDeleted();
         assistantsRepository.save(assistant);
-
-        // Soft delete associated user
         usersService.softDeleteUserForAssistant(assistant.getUser().getUserId());
     }
 

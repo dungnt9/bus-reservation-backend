@@ -16,37 +16,36 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.be.model.Assistants;
 import com.example.be.service.AssistantsService;
+import com.example.be.dto.AssistantDTO;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/assistants")
 public class AssistantsController {
-
     private final AssistantsService assistantsService;
 
-    // Constructor injection
     public AssistantsController(AssistantsService assistantsService) {
         this.assistantsService = assistantsService;
     }
 
     @GetMapping
-    public ResponseEntity<List<Assistants>> getAllAssistants() {
-        return ResponseEntity.ok(assistantsService.getAllAssistants());
+    public ResponseEntity<List<AssistantDTO>> getAllAssistants() {
+        return ResponseEntity.ok(assistantsService.getAllAssistantsDTO());
     }
 
     @GetMapping("/{assistantId}")
-    public ResponseEntity<Assistants> getAssistantById(@PathVariable Integer assistantId) {
-        return ResponseEntity.ok(assistantsService.getAssistantById(assistantId));
+    public ResponseEntity<AssistantDTO> getAssistantById(@PathVariable Integer assistantId) {
+        return ResponseEntity.ok(assistantsService.getAssistantDTOById(assistantId));
     }
 
     @PostMapping
-    public ResponseEntity<Assistants> createAssistant(@Valid @RequestBody Assistants assistant) {
+    public ResponseEntity<AssistantDTO> createAssistant(@Valid @RequestBody Assistants assistant) {
         return ResponseEntity.ok(assistantsService.createAssistant(assistant));
     }
 
     @PutMapping("/{assistantId}")
-    public ResponseEntity<Assistants> updateAssistant(@PathVariable Integer assistantId, @Valid @RequestBody Assistants assistant) {
+    public ResponseEntity<AssistantDTO> updateAssistant(@PathVariable Integer assistantId, @Valid @RequestBody Assistants assistant) {
         return ResponseEntity.ok(assistantsService.updateAssistant(assistantId, assistant));
     }
 

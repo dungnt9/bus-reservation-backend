@@ -1,11 +1,14 @@
+// AdminsService.java
 package com.example.be.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.be.dto.AdminDTO;
 import com.example.be.model.Admins;
 import com.example.be.model.Users;
 import com.example.be.repository.AdminsRepository;
@@ -29,22 +32,44 @@ public class AdminsService {
         this.usersService = usersService;
     }
 
+    protected AdminDTO convertToDTO(Admins admin) {
+        AdminDTO dto = new AdminDTO();
+        dto.setAdminId(admin.getAdminId());
+        dto.setUserId(admin.getUser().getUserId());
+        dto.setFullName(admin.getUser().getFullName());
+        dto.setPhoneNumber(admin.getUser().getPhoneNumber());
+        dto.setEmail(admin.getUser().getEmail());
+        dto.setPassword_hash(admin.getUser().getPassword_hash());
+        dto.setGender(admin.getUser().getGender() != null ? admin.getUser().getGender().toString() : null);
+        dto.setAddress(admin.getUser().getAddress());
+        dto.setDateOfBirth(admin.getUser().getDateOfBirth());
+        return dto;
+    }
+
+    public List<AdminDTO> getAllAdminsDTO() {
+        return getAllAdmins().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public AdminDTO getAdminDTOById(Integer adminId) {
+        return convertToDTO(getAdminById(adminId));
+    }
+
+    public AdminDTO createAdmin(Admins admin) {
+        return convertToDTO(createAdminEntity(admin));
+    }
+
     @Transactional
-    public Admins createAdmin(Admins admin) {
-        // Validate required fields
+    protected Admins createAdminEntity(Admins admin) {
         validateAdminFields(admin);
-
-        // First, create the user associated with the admin
         Users user = usersService.createUserForAdmin(admin.getUser());
-
-        // Set the created user to the admin
         admin.setUser(user);
         admin.setCreatedAt(LocalDateTime.now());
-
         return adminsRepository.save(admin);
     }
 
-    private void validateAdminFields(Admins admin) {
+    protected void validateAdminFields(Admins admin) {
         if (admin == null) {
             throw new IllegalArgumentException("Admin information cannot be null");
         }
@@ -56,33 +81,26 @@ public class AdminsService {
         }
     }
 
-    @Transactional
-    public Admins updateAdmin(Integer adminId, Admins adminDetails) {
-        // Retrieve existing admin
-        Admins existingAdmin = getAdminById(adminId);
+    public AdminDTO updateAdmin(Integer adminId, Admins adminDetails) {
+        return convertToDTO(updateAdminEntity(adminId, adminDetails));
+    }
 
-        // Update user details first
+    @Transactional
+    protected Admins updateAdminEntity(Integer adminId, Admins adminDetails) {
+        Admins existingAdmin = getAdminById(adminId);
         Users updatedUser = usersService.updateUserForAdmin(
                 existingAdmin.getUser().getUserId(),
                 adminDetails.getUser()
         );
-
-        // Update admin-specific details if needed
         existingAdmin.setUpdatedAt(LocalDateTime.now());
-
-        // Save updated admin
         return adminsRepository.save(existingAdmin);
     }
 
     @Transactional
     public void deleteAdmin(Integer adminId) {
         Admins admin = getAdminById(adminId);
-
-        // Soft delete admin
         admin.markAsDeleted();
         adminsRepository.save(admin);
-
-        // Soft delete associated user
         usersService.softDeleteUserForAdmin(admin.getUser().getUserId());
     }
 

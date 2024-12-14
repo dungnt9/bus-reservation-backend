@@ -1,16 +1,19 @@
+// DriversService.java
 package com.example.be.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; //đảm bảo tính toàn vẹn của dữ liệu
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import com.example.be.dto.DriverDTO;
 import com.example.be.model.Drivers;
 import com.example.be.model.Users;
 import com.example.be.repository.DriversRepository;
 import com.example.be.repository.UsersRepository;
-import org.springframework.util.StringUtils;  //kiểm tra định dạng chuỗi
 
 @Service
 public class DriversService {
@@ -19,43 +22,66 @@ public class DriversService {
     private final UsersRepository usersRepository;
     private final UsersService usersService;
 
-    // Constructor injection
-    public DriversService(DriversRepository driversRepository, UsersRepository usersRepository, UsersService usersService) {
+    public DriversService(DriversRepository driversRepository,
+                          UsersRepository usersRepository,
+                          UsersService usersService) {
         this.driversRepository = driversRepository;
         this.usersRepository = usersRepository;
         this.usersService = usersService;
     }
 
+    protected DriverDTO convertToDTO(Drivers driver) {
+        DriverDTO dto = new DriverDTO();
+        dto.setDriverId(driver.getDriverId());
+        dto.setUserId(driver.getUser().getUserId());
+        dto.setFullName(driver.getUser().getFullName());
+        dto.setPhoneNumber(driver.getUser().getPhoneNumber());
+        dto.setEmail(driver.getUser().getEmail());
+        dto.setPassword_hash(driver.getUser().getPassword_hash());
+        dto.setGender(driver.getUser().getGender() != null ? driver.getUser().getGender().toString() : null);
+        dto.setAddress(driver.getUser().getAddress());
+        dto.setDateOfBirth(driver.getUser().getDateOfBirth());
+        dto.setLicenseNumber(driver.getLicenseNumber());
+        dto.setLicenseClass(driver.getLicenseClass());
+        dto.setLicenseExpiry(driver.getLicenseExpiry());
+        dto.setDriverStatus(driver.getDriverStatus().toString());
+        return dto;
+    }
+
+    public List<DriverDTO> getAllDriversDTO() {
+        return getAllDrivers().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public DriverDTO getDriverDTOById(Integer driverId) {
+        return convertToDTO(getDriverById(driverId));
+    }
+
+    public DriverDTO createDriver(Drivers driver) {
+        return convertToDTO(createDriverEntity(driver));
+    }
+
     @Transactional
-    public Drivers createDriver(Drivers driver) {
-        // Validate required fields
+    protected Drivers createDriverEntity(Drivers driver) {
         validateDriverFields(driver);
-
-        // First, create the user associated with the driver
         Users user = usersService.createUserForDriver(driver.getUser());
-
-        // Set the created user to the driver
         driver.setUser(user);
         driver.setCreatedAt(LocalDateTime.now());
-        driver.setDriverStatus(Drivers.DriverStatus.available); // Default status
-
+        driver.setDriverStatus(Drivers.DriverStatus.available);
         return driversRepository.save(driver);
     }
 
-    private void validateDriverFields(Drivers driver) {
+    protected void validateDriverFields(Drivers driver) {
         if (driver == null) {
             throw new IllegalArgumentException("Driver information cannot be null");
         }
-
-        // Validate user fields
         Users user = driver.getUser();
         if (user == null ||
                 !StringUtils.hasText(user.getFullName()) ||
                 !StringUtils.hasText(user.getPhoneNumber())) {
             throw new IllegalArgumentException("User full name and phone number are required");
         }
-
-        // Validate driver-specific fields
         if (!StringUtils.hasText(driver.getLicenseNumber()) ||
                 !StringUtils.hasText(driver.getLicenseClass()) ||
                 driver.getLicenseExpiry() == null) {
@@ -63,34 +89,30 @@ public class DriversService {
         }
     }
 
+    public DriverDTO updateDriver(Integer driverId, Drivers driverDetails) {
+        return convertToDTO(updateDriverEntity(driverId, driverDetails));
+    }
+
     @Transactional
-    public Drivers updateDriver(Integer driverId, Drivers driverDetails) {
-        // Retrieve existing driver
+    protected Drivers updateDriverEntity(Integer driverId, Drivers driverDetails) {
         Drivers existingDriver = getDriverById(driverId);
-
-        // Update user details first
-        Users updatedUser = usersService.updateUserForDriver(existingDriver.getUser().getUserId(), driverDetails.getUser());
-
-        // Update driver-specific details
+        Users updatedUser = usersService.updateUserForDriver(
+                existingDriver.getUser().getUserId(),
+                driverDetails.getUser()
+        );
         existingDriver.setLicenseNumber(driverDetails.getLicenseNumber());
         existingDriver.setLicenseClass(driverDetails.getLicenseClass());
         existingDriver.setLicenseExpiry(driverDetails.getLicenseExpiry());
         existingDriver.setDriverStatus(driverDetails.getDriverStatus());
         existingDriver.setUpdatedAt(LocalDateTime.now());
-
-        // Save updated driver
         return driversRepository.save(existingDriver);
     }
 
     @Transactional
     public void deleteDriver(Integer driverId) {
         Drivers driver = getDriverById(driverId);
-
-        // Soft delete driver
         driver.markAsDeleted();
         driversRepository.save(driver);
-
-        // Soft delete associated user
         usersService.softDeleteUserForDriver(driver.getUser().getUserId());
     }
 
