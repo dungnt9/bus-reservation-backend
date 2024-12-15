@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.be.model.Vehicles;
 import com.example.be.service.VehiclesService;
+import com.example.be.dto.VehicleDropdownDTO;
 
 import jakarta.validation.Valid;
 
@@ -53,5 +54,10 @@ public class VehiclesController {
     public ResponseEntity<Void> deleteVehicle(@PathVariable Integer vehicleId) {
         vehiclesService.deleteVehicle(vehicleId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<List<VehicleDropdownDTO>> getAvailableVehicles() {
+        return ResponseEntity.ok(vehiclesService.getAvailableVehicles());
     }
 }

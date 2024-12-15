@@ -19,4 +19,11 @@ public interface RouteSchedulesRepository extends JpaRepository<RouteSchedules, 
     @Modifying
     @Query("UPDATE RouteSchedules r SET r.deletedAt = :now, r.updatedAt = :now WHERE r.route.routeId = :routeId AND r.deletedAt IS NULL")
     void softDeleteByRouteId(Integer routeId, LocalDateTime now);
+
+    @Query("SELECT DISTINCT r FROM RouteSchedules r " +
+            "JOIN FETCH r.route " +
+            "WHERE r.deletedAt IS NULL " +
+            "AND r.route.routeStatus = 'active' " +
+            "AND r.route.deletedAt IS NULL")
+    List<RouteSchedules> findActiveSchedulesWithRoute();
 }

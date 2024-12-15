@@ -1,33 +1,313 @@
 package com.example.be.service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.example.be.model.Trips;
-import com.example.be.repository.TripsRepository;
+import com.example.be.dto.*;
+import com.example.be.model.*;
+import com.example.be.repository.*;
 
 @Service
 public class TripsService {
-
     private final TripsRepository tripsRepository;
+    private final DriversRepository driversRepository;
+    private final AssistantsRepository assistantsRepository;
+    private final RouteSchedulesRepository routeSchedulesRepository;
+    private final TripSeatsRepository tripSeatsRepository;
+    private final VehicleSeatsRepository vehicleSeatsRepository;
+    private final VehiclesRepository vehiclesRepository;
 
-    // Constructor injection
-    public TripsService(TripsRepository tripsRepository) {
+    public TripsService(
+            TripsRepository tripsRepository,
+            DriversRepository driversRepository,
+            AssistantsRepository assistantsRepository,
+            RouteSchedulesRepository routeSchedulesRepository,
+            TripSeatsRepository tripSeatsRepository,
+            VehicleSeatsRepository vehicleSeatsRepository,
+            VehiclesRepository vehiclesRepository) {
         this.tripsRepository = tripsRepository;
+        this.driversRepository = driversRepository;
+        this.assistantsRepository = assistantsRepository;
+        this.routeSchedulesRepository = routeSchedulesRepository;
+        this.tripSeatsRepository = tripSeatsRepository;
+        this.vehicleSeatsRepository = vehicleSeatsRepository;
+        this.vehiclesRepository = vehiclesRepository;
     }
 
-    public Trips createTrip(Trips trip) {
+    // Get available drivers for dropdown
+    public List<DriverDropdownDTO> getAvailableDrivers() {
+        return driversRepository.findAllNotDeleted().stream()
+                .filter(driver -> driver.getDriverStatus() == Drivers.DriverStatus.available)
+                .map(driver -> {
+                    DriverDropdownDTO dto = new DriverDropdownDTO();
+                    dto.setDriverId(driver.getDriverId());
+                    dto.setFullName(driver.getUser().getFullName());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    // Get available assistants for dropdown
+    public List<AssistantDropdownDTO> getAvailableAssistants() {
+        return assistantsRepository.findAllNotDeleted().stream()
+                .filter(assistant -> assistant.getAssistantStatus() == Assistants.AssistantStatus.available)
+                .map(assistant -> {
+                    AssistantDropdownDTO dto = new AssistantDropdownDTO();
+                    dto.setAssistantId(assistant.getAssistantId());
+                    dto.setFullName(assistant.getUser().getFullName());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    // Get active route schedules for dropdown
+    public List<RouteScheduleDropdownDTO> getActiveRouteSchedules() {
+        return routeSchedulesRepository.findAllNotDeleted().stream()
+                .filter(schedule -> schedule.getRoute().getRouteStatus() == Routes.RouteStatus.active)
+                .map(schedule -> {
+                    RouteScheduleDropdownDTO dto = new RouteScheduleDropdownDTO();
+                    dto.setScheduleId(schedule.getScheduleId());
+                    dto.setRouteName(schedule.getRoute().getRouteName());
+                    dto.setDepartureTime(schedule.getDepartureTime());
+                    dto.setDaysOfWeek(schedule.getDaysOfWeek());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private List<VehicleSeats> validateVehicleSeats(List<Integer> vehicleSeatIds) {
+        if (vehicleSeatIds == null || vehicleSeatIds.isEmpty()) {
+            throw new RuntimeException("Vehicle seats must be selected");
+        }
+
+        List<VehicleSeats> vehicleSeats = vehicleSeatsRepository.findAllById(vehicleSeatIds);
+        if (vehicleSeats.size() != vehicleSeatIds.size()) {
+            throw new RuntimeException("Some selected vehicle seats do not exist");
+        }
+
+        // Validate all seats belong to the same vehicle
+        long distinctVehicles = vehicleSeats.stream()
+                .map(seat -> seat.getVehicle().getVehicleId())
+                .distinct()
+                .count();
+        if (distinctVehicles != 1) {
+            throw new RuntimeException("All seats must belong to the same vehicle");
+        }
+
+        return vehicleSeats;
+    }
+
+    @Transactional
+    public TripDTO createTrip(TripCreateRequest request) {
+        // Validate schedule exists and route is active
+        RouteSchedules schedule = validateSchedule(request.getScheduleId());
+
+        // Validate departure day matches schedule's day of week
+        validateScheduleDay(schedule, request.getScheduledDeparture());
+
+        // Validate driver and assistant availability
+        Drivers driver = validateDriver(request.getDriverId());
+        Assistants assistant = validateAssistant(request.getAssistantId());
+
+        // Validate vehicle
+        Vehicles vehicle = validateVehicle(request.getVehicleId());
+
+        // Create trip
+        Trips trip = new Trips();
+        trip.setRouteSchedule(schedule);
+        trip.setDriver(driver);
+        trip.setAssistant(assistant);
+        trip.setScheduledDeparture(request.getScheduledDeparture());
+        trip.setScheduledArrival(request.getScheduledArrival());
+        trip.setTripStatus(Trips.TripStatus.in_progress);
         trip.setCreatedAt(LocalDateTime.now());
-        return tripsRepository.save(trip);
+
+        Trips savedTrip = tripsRepository.save(trip);
+
+        // Create trip seats
+        createTripSeats(savedTrip, vehicle);
+
+        // Update statuses
+        driver.setDriverStatus(Drivers.DriverStatus.on_trip);
+        assistant.setAssistantStatus(Assistants.AssistantStatus.on_trip);
+        driversRepository.save(driver);
+        assistantsRepository.save(assistant);
+
+        return convertToDTO(savedTrip);
     }
 
-    public List<Trips> getAllTrips() {
-        return tripsRepository.findAllNotDeleted();
+    private Vehicles validateVehicle(Integer vehicleId) {
+        Vehicles vehicle = vehiclesRepository.findByIdNotDeleted(vehicleId);
+        if (vehicle == null || vehicle.getVehicleStatus() != Vehicles.VehicleStatus.active) {
+            throw new RuntimeException("Xe không khả dụng");
+        }
+        return vehicle;
     }
 
-    public Trips getTripById(Integer tripId) {
+    private void createTripSeats(Trips trip, Vehicles vehicle) {
+        List<VehicleSeats> vehicleSeats = vehicleSeatsRepository.findByVehicle(vehicle);
+        if (vehicleSeats.isEmpty()) {
+            throw new RuntimeException("Xe không có ghế nào");
+        }
+
+        List<TripSeats> tripSeats = vehicleSeats.stream().map(vehicleSeat -> {
+            TripSeats tripSeat = new TripSeats();
+            tripSeat.setTrip(trip);
+            tripSeat.setVehicleSeat(vehicleSeat);
+            tripSeat.setTripSeatStatus(TripSeats.TripSeatStatus.available);
+            tripSeat.setCreatedAt(LocalDateTime.now());
+            return tripSeat;
+        }).collect(Collectors.toList());
+
+        tripSeatsRepository.saveAll(tripSeats);
+    }
+
+    private RouteSchedules validateSchedule(Integer scheduleId) {
+        RouteSchedules schedule = routeSchedulesRepository.findByIdNotDeleted(scheduleId);
+        if (schedule == null || schedule.getRoute().getRouteStatus() != Routes.RouteStatus.active) {
+            throw new RuntimeException("Invalid or inactive route schedule");
+        }
+        return schedule;
+    }
+
+    private void validateScheduleDay(RouteSchedules schedule, LocalDateTime scheduledDeparture) {
+        String tripDay = scheduledDeparture.getDayOfWeek().name(); // Returns "MONDAY", "TUESDAY", etc.
+        List<String> scheduleDays = schedule.getDaysOfWeek(); // Now returns uppercase days
+
+        if (!scheduleDays.contains(tripDay)) {
+            String daysInVietnamese = scheduleDays.stream()
+                    .map(this::formatDayToVietnamese)
+                    .collect(Collectors.joining(", "));
+
+            throw new RuntimeException("Thời gian khởi hành phải là một trong các ngày: " + daysInVietnamese);
+        }
+    }
+
+    private String formatDayToVietnamese(String day) {
+        switch (day) {
+            case "MONDAY": return "Thứ 2";
+            case "TUESDAY": return "Thứ 3";
+            case "WEDNESDAY": return "Thứ 4";
+            case "THURSDAY": return "Thứ 5";
+            case "FRIDAY": return "Thứ 6";
+            case "SATURDAY": return "Thứ 7";
+            case "SUNDAY": return "Chủ nhật";
+            default: return day;
+        }
+    }
+
+    private Drivers validateDriver(Integer driverId) {
+        Drivers driver = driversRepository.findByIdNotDeleted(driverId);
+        if (driver == null) {
+            throw new RuntimeException("Driver not found or has been deleted");
+        }
+        return driver;
+    }
+
+    private Assistants validateAssistant(Integer assistantId) {
+        Assistants assistant = assistantsRepository.findByIdNotDeleted(assistantId);
+        if (assistant == null) {
+            throw new RuntimeException("Assistant not found or has been deleted");
+        }
+        return assistant;
+    }
+
+    public List<TripDTO> getAllTrips() {
+        return tripsRepository.findAllNotDeleted().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public TripDTO getTripById(Integer tripId) {
+        return convertToDTO(getTripEntity(tripId));
+    }
+
+    @Transactional
+    public TripDTO updateTrip(Integer tripId, TripCreateRequest request) {
+        Trips existingTrip = getTripEntity(tripId);
+
+        // Update trip status if provided
+        if (request.getTripStatus() != null) {
+            existingTrip.setTripStatus(Trips.TripStatus.valueOf(request.getTripStatus()));
+        }
+
+        // Update departure and arrival times if provided
+        if (request.getActualDeparture() != null) {
+            existingTrip.setActualDeparture(request.getActualDeparture());
+        }
+        if (request.getActualArrival() != null) {
+            existingTrip.setActualArrival(request.getActualArrival());
+        }
+
+        // Update driver if changed
+        if (request.getDriverId() != null && !existingTrip.getDriver().getDriverId().equals(request.getDriverId())) {
+            // Set old driver as available
+            existingTrip.getDriver().setDriverStatus(Drivers.DriverStatus.available);
+            driversRepository.save(existingTrip.getDriver());
+
+            // Set new driver and update status
+            Drivers newDriver = validateDriver(request.getDriverId());
+            newDriver.setDriverStatus(Drivers.DriverStatus.on_trip);
+            driversRepository.save(newDriver);
+            existingTrip.setDriver(newDriver);
+        }
+
+        // Update assistant if changed
+        if (request.getAssistantId() != null && !existingTrip.getAssistant().getAssistantId().equals(request.getAssistantId())) {
+            // Set old assistant as available
+            existingTrip.getAssistant().setAssistantStatus(Assistants.AssistantStatus.available);
+            assistantsRepository.save(existingTrip.getAssistant());
+
+            // Set new assistant and update status
+            Assistants newAssistant = validateAssistant(request.getAssistantId());
+            newAssistant.setAssistantStatus(Assistants.AssistantStatus.on_trip);
+            assistantsRepository.save(newAssistant);
+            existingTrip.setAssistant(newAssistant);
+        }
+
+        // Update trip seats if provided
+        if (request.getTripSeats() != null) {
+            for (TripSeatUpdateDTO seatUpdate : request.getTripSeats()) {
+                TripSeats tripSeat = tripSeatsRepository.findByIdNotDeleted(seatUpdate.getTripSeatId());
+                if (tripSeat != null) {
+                    tripSeat.setTripSeatStatus(TripSeats.TripSeatStatus.valueOf(seatUpdate.getStatus()));
+                    tripSeatsRepository.save(tripSeat);
+                }
+            }
+        }
+
+        existingTrip.setUpdatedAt(LocalDateTime.now());
+        return convertToDTO(tripsRepository.save(existingTrip));
+    }
+
+    @Transactional
+    public void deleteTrip(Integer tripId) {
+        Trips trip = getTripEntity(tripId);
+
+        // Soft delete associated trip seats
+        List<TripSeats> tripSeats = tripSeatsRepository.findByTripId(tripId);
+        tripSeats.forEach(seat -> {
+            seat.markAsDeleted();
+            tripSeatsRepository.save(seat);
+        });
+
+        // Update driver and assistant status
+        trip.getDriver().setDriverStatus(Drivers.DriverStatus.available);
+        trip.getAssistant().setAssistantStatus(Assistants.AssistantStatus.available);
+        driversRepository.save(trip.getDriver());
+        assistantsRepository.save(trip.getAssistant());
+
+        // Soft delete trip
+        trip.markAsDeleted();
+        tripsRepository.save(trip);
+    }
+
+    private Trips getTripEntity(Integer tripId) {
         Trips trip = tripsRepository.findByIdNotDeleted(tripId);
         if (trip == null) {
             throw new RuntimeException("Trip not found or has been deleted");
@@ -35,25 +315,97 @@ public class TripsService {
         return trip;
     }
 
-    public Trips updateTrip(Integer tripId, Trips tripDetails) {
-        Trips trip = getTripById(tripId);
+    private TripDTO convertToDTO(Trips trip) {
+        TripDTO dto = new TripDTO();
+        dto.setTripId(trip.getTripId());
 
-        trip.setRouteSchedule(tripDetails.getRouteSchedule());
-        trip.setDriver(tripDetails.getDriver());
-        trip.setAssistant(tripDetails.getAssistant());
-        trip.setScheduledDeparture(tripDetails.getScheduledDeparture());
-        trip.setScheduledArrival(tripDetails.getScheduledArrival());
-        trip.setActualDeparture(tripDetails.getActualDeparture());
-        trip.setActualArrival(tripDetails.getActualArrival());
-        trip.setTripStatus(tripDetails.getTripStatus());
-        trip.setUpdatedAt(LocalDateTime.now());
+        // Route Schedule và Route information
+        RouteSchedules schedule = trip.getRouteSchedule();
+        if (schedule != null && schedule.getDeletedAt() == null) {
+            dto.setScheduleId(schedule.getScheduleId());
+            Routes route = schedule.getRoute();
+            if (route != null && route.getDeletedAt() == null) {
+                dto.setRouteName(route.getRouteName());
+                dto.setRouteStatus(route.getRouteStatus().toString());
+            } else {
+                dto.setRouteName("Route no longer exists");
+                dto.setRouteStatus("DELETED");
+            }
+        } else {
+            dto.setRouteName("Schedule no longer exists");
+        }
 
-        return tripsRepository.save(trip);
+        // Driver information
+        Drivers driver = trip.getDriver();
+        if (driver != null && driver.getDeletedAt() == null) {
+            dto.setDriverId(driver.getDriverId());
+            dto.setDriverName(driver.getUser().getFullName());
+            dto.setDriverStatus(driver.getDriverStatus().toString());
+        } else {
+            dto.setDriverName("Driver no longer exists");
+            dto.setDriverStatus("DELETED");
+        }
+
+        // Assistant information
+        Assistants assistant = trip.getAssistant();
+        if (assistant != null && assistant.getDeletedAt() == null) {
+            dto.setAssistantId(assistant.getAssistantId());
+            dto.setAssistantName(assistant.getUser().getFullName());
+            dto.setAssistantStatus(assistant.getAssistantStatus().toString());
+        } else {
+            dto.setAssistantName("Assistant no longer exists");
+            dto.setAssistantStatus("DELETED");
+        }
+
+        // Trip details
+        dto.setScheduledDeparture(trip.getScheduledDeparture());
+        dto.setScheduledArrival(trip.getScheduledArrival());
+        dto.setActualDeparture(trip.getActualDeparture());
+        dto.setActualArrival(trip.getActualArrival());
+        dto.setTripStatus(trip.getTripStatus().toString());
+
+        // Vehicle và Seat information
+        List<TripSeats> tripSeats = tripSeatsRepository.findByTripId(trip.getTripId());
+        dto.setTotalSeats(tripSeats.size());
+        dto.setAvailableSeats((int) tripSeats.stream()
+                .filter(seat -> seat.getTripSeatStatus() == TripSeats.TripSeatStatus.available)
+                .count());
+
+        // Vehicle information từ trip seats
+        if (!tripSeats.isEmpty()) {
+            VehicleSeats firstSeat = tripSeats.get(0).getVehicleSeat();
+            if (firstSeat != null && firstSeat.getVehicle() != null) {
+                dto.setVehiclePlateNumber(firstSeat.getVehicle().getPlateNumber());
+            }
+        }
+
+        // Convert trip seats to DTOs
+        dto.setTripSeats(tripSeats.stream()
+                .map(this::convertToTripSeatDTO)
+                .collect(Collectors.toList()));
+
+        return dto;
     }
 
-    public void deleteTrip(Integer tripId) {
-        Trips trip = getTripById(tripId);
-        trip.markAsDeleted();
-        tripsRepository.save(trip);
+    private TripSeatDTO convertToTripSeatDTO(TripSeats tripSeat) {
+        TripSeatDTO dto = new TripSeatDTO();
+        dto.setTripSeatId(tripSeat.getTripSeatId());
+        dto.setSeatNumber(tripSeat.getVehicleSeat().getSeatNumber());
+        dto.setVehiclePlateNumber(tripSeat.getVehicleSeat().getVehicle().getPlateNumber());
+        dto.setStatus(tripSeat.getTripSeatStatus());
+        return dto;
+    }
+
+    public List<VehicleSeatDTO> getAvailableVehicleSeats() {
+        return vehicleSeatsRepository.findAllNotDeleted().stream()
+                .map(seat -> {
+                    VehicleSeatDTO dto = new VehicleSeatDTO();
+                    dto.setVehicleSeatId(seat.getVehicleSeatId());
+                    dto.setSeatNumber(seat.getSeatNumber());
+                    dto.setVehicleId(seat.getVehicle().getVehicleId());
+                    dto.setPlateNumber(seat.getVehicle().getPlateNumber());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 }

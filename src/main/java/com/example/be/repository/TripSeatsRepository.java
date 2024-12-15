@@ -13,4 +13,7 @@ public interface TripSeatsRepository extends JpaRepository<TripSeats, Integer> {
 
     @Query("SELECT t FROM TripSeats t WHERE t.tripSeatId = :id AND t.deletedAt IS NULL")
     TripSeats findByIdNotDeleted(Integer id);
+
+    @Query("SELECT t FROM TripSeats t WHERE t.trip.tripId = :tripId AND t.deletedAt IS NULL")
+    List<TripSeats> findByTripId(Integer tripId);
 }

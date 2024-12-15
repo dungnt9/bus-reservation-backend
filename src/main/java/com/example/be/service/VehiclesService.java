@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,12 +13,28 @@ import com.example.be.model.Vehicles;
 import com.example.be.model.VehicleSeats;
 import com.example.be.repository.VehiclesRepository;
 import com.example.be.repository.VehicleSeatsRepository;
+import com.example.be.dto.VehicleDropdownDTO;
 
 @Service
 public class VehiclesService {
 
     private final VehiclesRepository vehiclesRepository;
     private final VehicleSeatsRepository vehicleSeatsRepository;
+
+    public List<VehicleDropdownDTO> getAvailableVehicles() {
+        return vehiclesRepository.findAllNotDeleted().stream()
+                .filter(vehicle -> vehicle.getVehicleStatus() == Vehicles.VehicleStatus.active)
+                .map(this::convertToDropdownDTO)
+                .collect(Collectors.toList());
+    }
+
+    private VehicleDropdownDTO convertToDropdownDTO(Vehicles vehicle) {
+        VehicleDropdownDTO dto = new VehicleDropdownDTO();
+        dto.setVehicleId(vehicle.getVehicleId());
+        dto.setPlateNumber(vehicle.getPlateNumber());
+        dto.setSeatCapacity(vehicle.getSeatCapacity());
+        return dto;
+    }
 
     // Constructor injection
     public VehiclesService(

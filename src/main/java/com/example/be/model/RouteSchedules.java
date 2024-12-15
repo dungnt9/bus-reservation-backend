@@ -4,7 +4,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -41,20 +42,25 @@ public class RouteSchedules {
     @Column(name = "day_of_week") // Đây là trường SET trong MySQL
     private String dayOfWeek; // Lưu trữ dưới dạng chuỗi trong Java
 
-    // Chuyển đổi từ chuỗi (lưu trong MySQL) thành danh sách các ngày
+    // Method để convert string từ database sang List<String>
     public List<String> getDaysOfWeek() {
         if (dayOfWeek != null && !dayOfWeek.isEmpty()) {
-            return Arrays.asList(dayOfWeek.split(","));
+            return Arrays.stream(dayOfWeek.split(","))
+                    .map(String::trim)
+                    .map(String::toUpperCase)  // Convert to uppercase
+                    .collect(Collectors.toList());
         }
-        return Arrays.asList();  // Trả về danh sách trống nếu dayOfWeek là null hoặc rỗng
+        return new ArrayList<>();
     }
 
-    // Chuyển đổi danh sách các ngày thành chuỗi để lưu vào MySQL
+    // Method để save List<String> vào database
     public void setDaysOfWeek(List<String> days) {
         if (days != null && !days.isEmpty()) {
-            this.dayOfWeek = String.join(",", days);  // Nối các ngày thành chuỗi ngăn cách bằng dấu phẩy
+            this.dayOfWeek = days.stream()
+                    .map(String::toUpperCase)  // Ensure uppercase when saving
+                    .collect(Collectors.joining(","));
         } else {
-            this.dayOfWeek = null;  // Nếu danh sách trống, lưu null
+            this.dayOfWeek = null;
         }
     }
 

@@ -5,10 +5,9 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class RouteScheduleDTO {
+public class RouteScheduleDropdownDTO {
     private Integer scheduleId;
-    private Integer routeId;
     private String routeName;
-    private LocalTime departureTime;  // Thay đổi kiểu dữ liệu thành LocalTime
+    private LocalTime departureTime;
     private List<String> daysOfWeek;
 }

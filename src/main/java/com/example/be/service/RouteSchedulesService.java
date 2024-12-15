@@ -77,18 +77,15 @@ public class RouteSchedulesService {
     // Conversion method to DTO
     private RouteScheduleDTO convertToDTO(RouteSchedules routeSchedule) {
         RouteScheduleDTO dto = new RouteScheduleDTO();
-
         dto.setScheduleId(routeSchedule.getScheduleId());
 
-        // Handle route information with soft delete consideration
         Routes route = routeSchedule.getRoute();
         if (route != null) {
             dto.setRouteId(route.getRouteId());
             dto.setRouteName(route.getRouteName());
         }
 
-        // Set schedule-specific information
-        dto.setDepartureTime(routeSchedule.getDepartureTime());
+        dto.setDepartureTime(routeSchedule.getDepartureTime());  // LocalTime được chuyển trực tiếp
         dto.setDaysOfWeek(routeSchedule.getDaysOfWeek());
 
         return dto;
