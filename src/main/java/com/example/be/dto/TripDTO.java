@@ -1,8 +1,10 @@
+// Trong TripDTO.java
 package com.example.be.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import lombok.Data;
 import java.util.List;
+import lombok.Data;
 
 @Data
 public class TripDTO {
@@ -25,4 +27,5 @@ public class TripDTO {
     private Integer totalSeats;
     private Integer availableSeats;
     private List<TripSeatDTO> tripSeats;
+    private BigDecimal ticketPrice;  // Thêm trường này
 }
