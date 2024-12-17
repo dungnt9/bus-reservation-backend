@@ -31,27 +31,46 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    public AuthResponse login(AuthRequest request) {
+    public AuthResponse adminLogin(AuthRequest request) {
         Users user = usersRepository.findByPhoneNumber(request.getPhoneNumber())
                 .orElseThrow(() -> new RuntimeException("Invalid credentials"));
 
-        // Kiểm tra mật khẩu - ở đây tạm thời so sánh trực tiếp vì chưa mã hóa
-        // Trong thực tế nên dùng passwordEncoder.matches()
         if (!request.getPassword().equals(user.getPassword_hash())) {
             throw new RuntimeException("Invalid credentials");
         }
 
-        // Kiểm tra role admin
         if (!user.getUserRole().equals(Users.UserRole.admin)) {
             throw new RuntimeException("Access denied: Not an admin");
         }
 
-        // Kiểm tra user có phải là admin
         if (adminsRepository.findByUserId(user.getUserId()).isEmpty()) {
             throw new RuntimeException("Access denied: User is not an admin");
         }
 
-        String token = jwtUtil.generateToken(user.getPhoneNumber(), user.getUserId(), user.getUserRole().toString());
+        String token = jwtUtil.generateToken(user.getPhoneNumber(), user.getUserId(), "ADMIN");
+
+        AuthResponse response = new AuthResponse();
+        response.setToken(token);
+        response.setMessage("Login successful");
+        response.setUser(convertToUserDTO(user));
+        return response;
+    }
+
+    public AuthResponse userLogin(AuthRequest request) {
+        Users user = usersRepository.findByPhoneNumber(request.getPhoneNumber())
+                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+
+        if (!request.getPassword().equals(user.getPassword_hash())) {
+            throw new RuntimeException("Invalid credentials");
+        }
+
+        // Check if user role is valid for customer website
+        if (user.getUserRole().equals(Users.UserRole.admin)) {
+            throw new RuntimeException("Invalid user type for this application");
+        }
+
+        String role = user.getUserRole().toString().toUpperCase();
+        String token = jwtUtil.generateToken(user.getPhoneNumber(), user.getUserId(), role);
 
         AuthResponse response = new AuthResponse();
         response.setToken(token);

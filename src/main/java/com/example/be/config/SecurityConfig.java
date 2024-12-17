@@ -4,6 +4,7 @@ import com.example.be.security.JwtRequestFilter;
 import com.example.be.security.JwtUtil;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -48,8 +49,23 @@ public class SecurityConfig {
 
                 // Set permissions on endpoints
                 .authorizeHttpRequests(auth -> {
+                    // Public endpoints không cần đăng nhập
                     auth.requestMatchers("/api/auth/**").permitAll();
-                    auth.anyRequest().authenticated();
+                    auth.requestMatchers(HttpMethod.GET, "/api/routes/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/route-schedules/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/trips/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/trip-seats/**").permitAll();
+
+                    // Driver/Assistant endpoints
+                    auth.requestMatchers("/api/trips/**").hasAnyRole("ADMIN", "DRIVER", "ASSISTANT");
+
+                    // Customer endpoints
+                    auth.requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "CUSTOMER");
+                    auth.requestMatchers("/api/invoices/**").hasAnyRole("ADMIN", "CUSTOMER");
+
+                    // Tất cả các request khác yêu cầu xác thực
+                    // Admin có quyền truy cập tất cả API
+                    auth.anyRequest().hasRole("ADMIN");
                 })
 
                 // Add JWT token filter
@@ -62,7 +78,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:5179"));
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5178",  // Customer website
+                "http://localhost:5179"   // Admin website
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "content-type", "x-auth-token"));
         configuration.setExposedHeaders(Arrays.asList("x-auth-token"));

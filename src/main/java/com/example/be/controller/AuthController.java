@@ -1,37 +1,165 @@
 package com.example.be.controller;
 
-import com.example.be.dto.AuthRequest;
-import com.example.be.dto.AuthResponse;
-import com.example.be.dto.ErrorResponse;
+import com.example.be.dto.*;
+import com.example.be.model.Customers;
+import com.example.be.model.Users;
+import com.example.be.repository.CustomersRepository;
+import com.example.be.repository.UsersRepository;
+import com.example.be.security.JwtUtil;
 import com.example.be.service.AuthService;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@CrossOrigin(origins = "http://localhost:5173")
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
     private final AuthService authService;
+    private final UsersRepository usersRepository;
+    private final CustomersRepository customersRepository;
+    private final JwtUtil jwtUtil;
 
-    public AuthController(AuthService authService) {
+    // In-memory OTP storage
+    private final Map<String, OTPData> otpStorage = new ConcurrentHashMap<>();
+
+    public AuthController(
+            AuthService authService,
+            UsersRepository usersRepository,
+            CustomersRepository customersRepository,
+            JwtUtil jwtUtil) {
         this.authService = authService;
+        this.usersRepository = usersRepository;
+        this.customersRepository = customersRepository;
+        this.jwtUtil = jwtUtil;
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+    @PostMapping("/admin-login")
+    public ResponseEntity<?> adminLogin(@RequestBody AuthRequest request) {
         try {
-            AuthResponse response = authService.login(request);
+            AuthResponse response = authService.adminLogin(request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity
                     .badRequest()
                     .body(new ErrorResponse(e.getMessage()));
         }
+    }
+
+    @PostMapping("/user-login")
+    public ResponseEntity<?> userLogin(@RequestBody AuthRequest request) {
+        try {
+            AuthResponse response = authService.userLogin(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new ErrorResponse(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/verify-phone")
+    public ResponseEntity<?> verifyPhone(@Valid @RequestBody PhoneVerificationRequest request) {
+        try {
+            // Check if phone exists
+            if (usersRepository.findByPhoneNumber(request.getPhoneNumber()).isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body(new ErrorResponse("Phone number already registered"));
+            }
+
+            // Generate OTP
+            String otp = String.format("%06d", new Random().nextInt(1000000));
+
+            // Store OTP with timestamp
+            otpStorage.put(request.getPhoneNumber(), new OTPData(otp, System.currentTimeMillis(), 0));
+
+            // For development - print OTP to console
+            System.out.println("OTP for " + request.getPhoneNumber() + ": " + otp);
+
+            return ResponseEntity.ok(new MessageResponse("OTP sent successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Failed to send OTP: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOTP(@Valid @RequestBody OTPVerificationRequest request) {
+        OTPData otpData = otpStorage.get(request.getPhoneNumber());
+        if (otpData == null) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("OTP expired or not found"));
+        }
+
+        // Check expiration (5 minutes)
+        if (System.currentTimeMillis() - otpData.timestamp > 300000) {
+            otpStorage.remove(request.getPhoneNumber());
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("OTP expired"));
+        }
+
+        // Check attempts
+        if (otpData.attempts >= 3) {
+            otpStorage.remove(request.getPhoneNumber());
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Too many failed attempts"));
+        }
+
+        if (!otpData.code.equals(request.getOtp())) {
+            otpData.attempts++;
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Invalid OTP"));
+        }
+
+        // Clear OTP after successful verification
+        otpStorage.remove(request.getPhoneNumber());
+        return ResponseEntity.ok(new MessageResponse("OTP verified successfully"));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody CustomerRegisterRequest request) {
+        try {
+            // Create user
+            Users user = new Users();
+            user.setFullName(request.getFullName());
+            user.setPhoneNumber(request.getPhoneNumber());
+            user.setEmail(request.getEmail());
+            user.setPassword_hash(request.getPassword());
+            user.setGender(Users.Gender.valueOf(request.getGender().toLowerCase()));
+            user.setAddress(request.getAddress());
+            user.setDateOfBirth(request.getDateOfBirth());
+            user.setUserRole(Users.UserRole.customer);
+            user.setCreatedAt(LocalDateTime.now());
+
+            Users savedUser = usersRepository.save(user);
+
+            // Create customer record
+            Customers customer = new Customers();
+            customer.setUser(savedUser);
+            customer.setCreatedAt(LocalDateTime.now());
+            customersRepository.save(customer);
+
+            return ResponseEntity.ok(new MessageResponse("Registration successful"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Registration failed: " + e.getMessage()));
+        }
+    }
+
+    // Inner class for OTP data
+    @Data
+    @AllArgsConstructor
+    private static class OTPData {
+        private String code;
+        private long timestamp;
+        private int attempts;
     }
 }
