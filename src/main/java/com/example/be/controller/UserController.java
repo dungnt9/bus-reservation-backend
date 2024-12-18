@@ -1,5 +1,8 @@
 package com.example.be.controller;
 
+import com.example.be.dto.ChangePasswordRequest;
+import com.example.be.dto.ErrorResponse;
+import com.example.be.dto.MessageResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.be.service.UsersService;
@@ -27,5 +30,19 @@ public class UserController {
             @Valid @RequestBody UserDTO userDTO) {
         UserDTO updatedUser = usersService.updateUserProfile(userId, userDTO);
         return ResponseEntity.ok(updatedUser);
+    }
+
+    @PostMapping("/{userId}/change-password")
+    public ResponseEntity<?> changePassword(
+            @PathVariable Integer userId,
+            @RequestBody ChangePasswordRequest request) {
+        try {
+            usersService.changePassword(userId, request.getCurrentPassword(),
+                    request.getNewPassword());
+            return ResponseEntity.ok().body(new MessageResponse("Đổi mật khẩu thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse(e.getMessage()));
+        }
     }
 }

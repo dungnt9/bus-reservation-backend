@@ -234,4 +234,19 @@ public class UsersService {
         Users savedUser = usersRepository.save(existingUser);
         return convertToDTO(savedUser);
     }
+
+    @Transactional
+    public void changePassword(Integer userId, String currentPassword, String newPassword) {
+        Users user = getUserById(userId);
+
+        // Validate current password
+        if (!user.getPassword_hash().equals(currentPassword)) {
+            throw new RuntimeException("Mật khẩu hiện tại không chính xác");
+        }
+
+        // Update new password
+        user.setPassword_hash(newPassword);
+        user.setUpdatedAt(LocalDateTime.now());
+        usersRepository.save(user);
+    }
 }
