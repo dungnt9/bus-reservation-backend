@@ -2,6 +2,8 @@ package com.example.be.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.example.be.dto.UserDTO;
 import org.springframework.util.StringUtils;
 
 import org.springframework.stereotype.Service;
@@ -188,5 +190,48 @@ public class UsersService {
         if (!StringUtils.hasText(user.getPhoneNumber())) {
             throw new IllegalArgumentException("Phone number is required");
         }
+    }
+
+    public UserDTO getUserDTOById(Integer userId) {
+        Users user = getUserById(userId);
+        return convertToDTO(user);
+    }
+
+    private UserDTO convertToDTO(Users user) {
+        UserDTO dto = new UserDTO();
+        dto.setUserId(user.getUserId());
+        dto.setFullName(user.getFullName());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setEmail(user.getEmail());
+        dto.setGender(user.getGender() != null ? user.getGender().toString() : null);
+        dto.setAddress(user.getAddress());
+        dto.setDateOfBirth(user.getDateOfBirth());
+        dto.setUserRole(user.getUserRole().toString());
+        return dto;
+    }
+
+    public UserDTO updateUserProfile(Integer userId, UserDTO userDTO) {
+        Users existingUser = getUserById(userId);
+
+        // Update fields
+        if (userDTO.getFullName() != null) {
+            existingUser.setFullName(userDTO.getFullName());
+        }
+        if (userDTO.getEmail() != null) {
+            existingUser.setEmail(userDTO.getEmail());
+        }
+        if (userDTO.getGender() != null) {
+            existingUser.setGender(Users.Gender.valueOf(userDTO.getGender().toLowerCase()));
+        }
+        if (userDTO.getAddress() != null) {
+            existingUser.setAddress(userDTO.getAddress());
+        }
+        if (userDTO.getDateOfBirth() != null) {
+            existingUser.setDateOfBirth(userDTO.getDateOfBirth());
+        }
+
+        existingUser.setUpdatedAt(LocalDateTime.now());
+        Users savedUser = usersRepository.save(existingUser);
+        return convertToDTO(savedUser);
     }
 }

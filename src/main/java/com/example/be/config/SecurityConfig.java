@@ -55,6 +55,7 @@ public class SecurityConfig {
                     auth.requestMatchers(HttpMethod.GET, "/api/route-schedules/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/trips/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/trip-seats/**").permitAll();
+                    auth.requestMatchers("/api/users/**").permitAll();
 
                     // Driver/Assistant endpoints
                     auth.requestMatchers("/api/trips/**").hasAnyRole("ADMIN", "DRIVER", "ASSISTANT");
