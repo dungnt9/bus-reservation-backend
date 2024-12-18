@@ -1,6 +1,9 @@
 package com.example.be.controller;
 
+import java.time.LocalDate;
 import java.util.List;
+
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.be.dto.*;
@@ -62,5 +65,28 @@ public class TripsController {
     public ResponseEntity<Void> deleteTrip(@PathVariable Integer tripId) {
         tripsService.deleteTrip(tripId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<TripSearchDTO>> searchTrips(
+            @RequestParam Integer routeId,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate departureDate
+    ) {
+        try {
+            List<TripSearchDTO> trips = tripsService.searchAvailableTrips(routeId, departureDate);
+            return ResponseEntity.ok(trips);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/{tripId}/seats")
+    public ResponseEntity<TripDetailsDTO> getTripSeats(@PathVariable Integer tripId) {
+        try {
+            TripDetailsDTO tripDetails = tripsService.getTripDetails(tripId);
+            return ResponseEntity.ok(tripDetails);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

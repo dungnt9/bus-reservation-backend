@@ -1,5 +1,6 @@
 package com.example.be.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -398,5 +399,71 @@ public class TripsService {
                     return dto;
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TripSearchDTO> searchAvailableTrips(Integer routeId, LocalDate departureDate) {
+        List<Trips> trips = tripsRepository.searchAvailableTrips(routeId, departureDate);
+        return trips.stream()
+                .map(this::convertToSearchDTO)
+                .collect(Collectors.toList());
+    }
+
+    private TripSearchDTO convertToSearchDTO(Trips trip) {
+        TripSearchDTO dto = new TripSearchDTO();
+        dto.setTripId(trip.getTripId());
+        dto.setRouteName(trip.getRouteSchedule().getRoute().getRouteName());
+        dto.setScheduledDeparture(trip.getScheduledDeparture());
+        dto.setScheduledArrival(trip.getScheduledArrival());
+        dto.setTicketPrice(trip.getRouteSchedule().getRoute().getTicketPrice());
+        dto.setEstimatedDuration(trip.getRouteSchedule().getRoute().getEstimatedDuration());
+
+        // Get vehicle info from first available seat
+        List<TripSeats> tripSeats = tripSeatsRepository.findByTripId(trip.getTripId());
+        if (!tripSeats.isEmpty()) {
+            VehicleSeats firstSeat = tripSeats.get(0).getVehicleSeat();
+            dto.setVehiclePlateNumber(firstSeat.getVehicle().getPlateNumber());
+        }
+
+        // Calculate available seats
+        Long availableSeats = tripsRepository.countAvailableSeats(trip.getTripId());
+        dto.setAvailableSeats(availableSeats.intValue());
+
+        return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public TripDetailsDTO getTripDetails(Integer tripId) {
+        Trips trip = tripsRepository.findTripWithDetailsById(tripId);
+        if (trip == null) {
+            throw new RuntimeException("Trip not found");
+        }
+
+        TripDetailsDTO details = new TripDetailsDTO();
+        details.setTripId(trip.getTripId());
+        details.setRouteName(trip.getRouteSchedule().getRoute().getRouteName());
+        details.setScheduledDeparture(trip.getScheduledDeparture());
+        details.setScheduledArrival(trip.getScheduledArrival());
+        details.setTicketPrice(trip.getRouteSchedule().getRoute().getTicketPrice());
+        details.setEstimatedDuration(trip.getRouteSchedule().getRoute().getEstimatedDuration());
+
+        // Get all seats with their status
+        List<TripSeats> tripSeats = tripsRepository.findTripSeatsWithDetails(tripId);
+        if (!tripSeats.isEmpty()) {
+            details.setVehiclePlateNumber(tripSeats.get(0).getVehicleSeat().getVehicle().getPlateNumber());
+            details.setSeats(tripSeats.stream()
+                    .map(this::convertToSeatDTO)
+                    .collect(Collectors.toList()));
+        }
+
+        return details;
+    }
+
+    private SeatDTO convertToSeatDTO(TripSeats tripSeat) {
+        SeatDTO dto = new SeatDTO();
+        dto.setSeatId(tripSeat.getTripSeatId());
+        dto.setSeatNumber(tripSeat.getVehicleSeat().getSeatNumber());
+        dto.setStatus(tripSeat.getTripSeatStatus().toString());
+        return dto;
     }
 }
