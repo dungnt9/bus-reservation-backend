@@ -1,7 +1,18 @@
 package com.example.be.controller;
 
 import java.util.List;
+import java.util.Optional;
+
+import com.example.be.model.Customers;
+import com.example.be.repository.CustomersRepository;
+import com.example.be.security.JwtUtil;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwt;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import com.example.be.dto.InvoiceDTO;
 import com.example.be.dto.CreateInvoiceRequest;
@@ -12,9 +23,16 @@ import com.example.be.service.InvoicesService;
 public class InvoicesController {
 
     private final InvoicesService invoicesService;
+    private final JwtUtil jwtUtil;
+    private final CustomersRepository customersRepository;
 
-    public InvoicesController(InvoicesService invoicesService) {
+    public InvoicesController(
+            InvoicesService invoicesService,
+            JwtUtil jwtUtil,
+            CustomersRepository customersRepository) {
         this.invoicesService = invoicesService;
+        this.jwtUtil = jwtUtil;
+        this.customersRepository = customersRepository;
     }
 
     @GetMapping
@@ -50,5 +68,22 @@ public class InvoicesController {
     public ResponseEntity<Void> deleteInvoice(@PathVariable Integer invoiceId) {
         invoicesService.deleteInvoice(invoiceId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/customer/{userId}")
+    public ResponseEntity<List<InvoiceDTO>> getCustomerInvoices(@PathVariable Integer userId) {
+        try {
+            // Find customer by userId
+            Optional<Customers> customerOpt = customersRepository.findByUserId(userId);
+            if (customerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Get customer's invoices
+            List<InvoiceDTO> invoices = invoicesService.getCustomerInvoices(customerOpt.get().getCustomerId());
+            return ResponseEntity.ok(invoices);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

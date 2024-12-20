@@ -151,6 +151,9 @@ public class InvoicesService {
             Trips trip = firstSeat.getTrip();
             dto.setTripId(trip.getTripId());
             dto.setPlateNumber(firstSeat.getVehicleSeat().getVehicle().getPlateNumber());
+
+            Routes route = trip.getRouteSchedule().getRoute();
+            dto.setRouteName(route.getRouteName());
         }
 
         // Customer information
@@ -170,5 +173,11 @@ public class InvoicesService {
         dto.setInvoiceDate(invoice.getInvoiceDate());
 
         return dto;
+    }
+
+    public List<InvoiceDTO> getCustomerInvoices(Integer customerId) {
+        return invoicesRepository.findByCustomerIdNotDeleted(customerId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }

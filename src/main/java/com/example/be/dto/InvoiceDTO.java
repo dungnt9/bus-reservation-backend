@@ -9,6 +9,7 @@ import lombok.Data;
 public class InvoiceDTO {
     private Integer invoiceId;
     private Integer tripId;
+    private String routeName;
     private String plateNumber;
     private Integer customerId;
     private String fullName;

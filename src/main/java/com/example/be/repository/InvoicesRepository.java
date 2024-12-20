@@ -13,4 +13,10 @@ public interface InvoicesRepository extends JpaRepository<Invoices, Integer> {
 
     @Query("SELECT i FROM Invoices i WHERE i.invoiceId = :id AND i.deletedAt IS NULL")
     Invoices findByIdNotDeleted(Integer id);
+
+    @Query("SELECT i FROM Invoices i " +
+            "WHERE i.customer.customerId = :customerId " +
+            "AND i.deletedAt IS NULL " +
+            "ORDER BY i.invoiceDate DESC")
+    List<Invoices> findByCustomerIdNotDeleted(Integer customerId);
 }
