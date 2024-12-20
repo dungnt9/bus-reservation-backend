@@ -2,6 +2,7 @@ package com.example.be.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -465,5 +466,65 @@ public class TripsService {
         dto.setSeatNumber(tripSeat.getVehicleSeat().getSeatNumber());
         dto.setStatus(tripSeat.getTripSeatStatus().toString());
         return dto;
+    }
+
+
+
+//    Dành cho tài xế, phụ xe
+    public List<TripDTO> getMyTrips(Integer userId, String userRole) {
+        List<Trips> trips;
+        if ("driver".equals(userRole.toLowerCase())) {
+            // Get trips where user is driver
+            trips = tripsRepository.findAllNotDeleted().stream()
+                    .filter(trip -> trip.getDriver().getUser().getUserId().equals(userId))
+                    .collect(Collectors.toList());
+        } else if ("assistant".equals(userRole.toLowerCase())) {
+            // Get trips where user is assistant
+            trips = tripsRepository.findAllNotDeleted().stream()
+                    .filter(trip -> trip.getAssistant().getUser().getUserId().equals(userId))
+                    .collect(Collectors.toList());
+        } else {
+            return new ArrayList<>();
+        }
+
+        return trips.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public TripDTO updateTripStatusAndTimes(Integer tripId, TripStatusUpdateRequest request) {
+        // Validate trip exists
+        Trips trip = getTripEntity(tripId);
+        if (trip == null) {
+            throw new RuntimeException("Trip not found");
+        }
+
+        // Validate time sequence if both times are provided
+        if (request.getActualDeparture() != null && request.getActualArrival() != null) {
+            if (request.getActualArrival().isBefore(request.getActualDeparture())) {
+                throw new RuntimeException("Actual arrival time cannot be before actual departure time");
+            }
+        }
+
+        // Update actual times if provided
+        if (request.getActualDeparture() != null) {
+            trip.setActualDeparture(request.getActualDeparture());
+        }
+        if (request.getActualArrival() != null) {
+            trip.setActualArrival(request.getActualArrival());
+        }
+
+        // Update status if provided
+        if (request.getTripStatus() != null) {
+            trip.setTripStatus(Trips.TripStatus.valueOf(request.getTripStatus()));
+        }
+
+        // Update timestamp
+        trip.setUpdatedAt(LocalDateTime.now());
+
+        // Save and return updated trip
+        Trips updatedTrip = tripsRepository.save(trip);
+        return convertToDTO(updatedTrip);
     }
 }

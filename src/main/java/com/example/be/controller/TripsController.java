@@ -1,8 +1,12 @@
 package com.example.be.controller;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.be.model.Users;
+import com.example.be.service.UsersService;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +18,11 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/trips")
 public class TripsController {
     private final TripsService tripsService;
+    private final UsersService usersService;
 
-    public TripsController(TripsService tripsService) {
+    public TripsController(TripsService tripsService, UsersService usersService) {
         this.tripsService = tripsService;
+        this.usersService = usersService;
     }
 
     @GetMapping
@@ -85,6 +91,38 @@ public class TripsController {
         try {
             TripDetailsDTO tripDetails = tripsService.getTripDetails(tripId);
             return ResponseEntity.ok(tripDetails);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+
+
+
+//    Dành cho tài xế, phụ xe
+    @GetMapping("/my-trips/{userId}")
+    public ResponseEntity<List<TripDTO>> getMyTrips(@PathVariable Integer userId) {
+        try {
+            // Get user details to check role
+            Users user = usersService.getUserById(userId);
+            if (user == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            List<TripDTO> trips = tripsService.getMyTrips(userId, user.getUserRole().toString());
+            return ResponseEntity.ok(trips);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/{tripId}/status")
+    public ResponseEntity<TripDTO> updateTripStatusAndTimes(
+            @PathVariable Integer tripId,
+            @Valid @RequestBody TripStatusUpdateRequest request) {
+        try {
+            TripDTO updatedTrip = tripsService.updateTripStatusAndTimes(tripId, request);
+            return ResponseEntity.ok(updatedTrip);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
