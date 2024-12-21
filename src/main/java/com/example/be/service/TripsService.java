@@ -274,9 +274,9 @@ public class TripsService {
         }
     }
 
-    private void updateTripSeatsIfProvided(List<TripSeatUpdateDTO> seatUpdates) {
+    private void updateTripSeatsIfProvided(List<TripSeatDTO> seatUpdates) {
         if (seatUpdates != null) {
-            for (TripSeatUpdateDTO seatUpdate : seatUpdates) {
+            for (TripSeatDTO seatUpdate : seatUpdates) {
                 TripSeats tripSeat = tripSeatsRepository.findByIdNotDeleted(seatUpdate.getTripSeatId());
                 if (tripSeat != null) {
                     // Chuyển đổi từ String trong DTO sang enum TripSeatStatus

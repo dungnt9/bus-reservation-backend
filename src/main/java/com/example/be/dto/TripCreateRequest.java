@@ -15,5 +15,5 @@ public class TripCreateRequest {
     private LocalDateTime actualDeparture;
     private LocalDateTime actualArrival;
     private String tripStatus;
-    private List<TripSeatUpdateDTO> tripSeats;
+    private List<TripSeatDTO> tripSeats;
 }
