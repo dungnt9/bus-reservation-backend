@@ -1,7 +1,6 @@
 package com.example.be.controller;
 
 import com.example.be.dto.ChangePasswordRequest;
-import com.example.be.dto.ErrorResponse;
 import com.example.be.dto.MessageResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,7 +41,7 @@ public class UserController {
             return ResponseEntity.ok().body(new MessageResponse("Đổi mật khẩu thành công"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new ErrorResponse(e.getMessage()));
+                    .body(new MessageResponse(e.getMessage()));
         }
     }
 }

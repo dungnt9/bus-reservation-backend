@@ -50,7 +50,7 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity
                     .badRequest()
-                    .body(new ErrorResponse(e.getMessage()));
+                    .body(new MessageResponse(e.getMessage()));
         }
     }
 
@@ -62,7 +62,7 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity
                     .badRequest()
-                    .body(new ErrorResponse(e.getMessage()));
+                    .body(new MessageResponse(e.getMessage()));
         }
     }
 
@@ -72,7 +72,7 @@ public class AuthController {
             // Check if phone exists
             if (usersRepository.findByPhoneNumber(request.getPhoneNumber()).isPresent()) {
                 return ResponseEntity.badRequest()
-                        .body(new ErrorResponse("Phone number already registered"));
+                        .body(new MessageResponse("Phone number already registered"));
             }
 
             // Generate OTP
@@ -87,7 +87,7 @@ public class AuthController {
             return ResponseEntity.ok(new MessageResponse("OTP sent successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Failed to send OTP: " + e.getMessage()));
+                    .body(new MessageResponse("Failed to send OTP: " + e.getMessage()));
         }
     }
 
@@ -96,27 +96,27 @@ public class AuthController {
         OTPData otpData = otpStorage.get(request.getPhoneNumber());
         if (otpData == null) {
             return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("OTP expired or not found"));
+                    .body(new MessageResponse("OTP expired or not found"));
         }
 
         // Check expiration (5 minutes)
         if (System.currentTimeMillis() - otpData.timestamp > 300000) {
             otpStorage.remove(request.getPhoneNumber());
             return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("OTP expired"));
+                    .body(new MessageResponse("OTP expired"));
         }
 
         // Check attempts
         if (otpData.attempts >= 3) {
             otpStorage.remove(request.getPhoneNumber());
             return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Too many failed attempts"));
+                    .body(new MessageResponse("Too many failed attempts"));
         }
 
         if (!otpData.code.equals(request.getOtp())) {
             otpData.attempts++;
             return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Invalid OTP"));
+                    .body(new MessageResponse("Invalid OTP"));
         }
 
         // Clear OTP after successful verification
@@ -150,7 +150,7 @@ public class AuthController {
             return ResponseEntity.ok(new MessageResponse("Registration successful"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Registration failed: " + e.getMessage()));
+                    .body(new MessageResponse("Registration failed: " + e.getMessage()));
         }
     }
 
