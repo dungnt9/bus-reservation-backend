@@ -40,7 +40,11 @@ public class TripSeatsService {
 
         tripSeat.setTrip(tripSeatDetails.getTrip());
         tripSeat.setVehicleSeat(tripSeatDetails.getVehicleSeat());
-        tripSeat.setTripSeatStatus(tripSeatDetails.getTripSeatStatus());
+        // Chuyển đổi status từ String sang enum
+        if (tripSeatDetails.getTripSeatStatus() != null) {
+            TripSeats.TripSeatStatus status = TripSeats.TripSeatStatus.valueOf(tripSeatDetails.getTripSeatStatus().toString());
+            tripSeat.setTripSeatStatus(status);
+        }
         tripSeat.setUpdatedAt(LocalDateTime.now());
 
         return tripSeatsRepository.save(tripSeat);

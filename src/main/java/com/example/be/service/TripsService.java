@@ -279,7 +279,9 @@ public class TripsService {
             for (TripSeatUpdateDTO seatUpdate : seatUpdates) {
                 TripSeats tripSeat = tripSeatsRepository.findByIdNotDeleted(seatUpdate.getTripSeatId());
                 if (tripSeat != null) {
-                    tripSeat.setTripSeatStatus(TripSeats.TripSeatStatus.valueOf(seatUpdate.getStatus()));
+                    // Chuyển đổi từ String trong DTO sang enum TripSeatStatus
+                    TripSeats.TripSeatStatus status = TripSeats.TripSeatStatus.valueOf(seatUpdate.getStatus());
+                    tripSeat.setTripSeatStatus(status);
                     tripSeatsRepository.save(tripSeat);
                 }
             }
@@ -372,7 +374,7 @@ public class TripsService {
         dto.setTripSeatId(tripSeat.getTripSeatId());
         dto.setSeatNumber(tripSeat.getVehicleSeat().getSeatNumber());
         dto.setVehiclePlateNumber(tripSeat.getVehicleSeat().getVehicle().getPlateNumber());
-        dto.setStatus(tripSeat.getTripSeatStatus());
+        dto.setStatus(tripSeat.getTripSeatStatus().toString()); // Convert enum to string
         return dto;
     }
 
