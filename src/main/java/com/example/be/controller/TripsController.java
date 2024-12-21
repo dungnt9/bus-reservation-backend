@@ -72,12 +72,12 @@ public class TripsController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<TripSearchDTO>> searchTrips(
+    public ResponseEntity<List<TripDTO>> searchTrips(
             @RequestParam Integer routeId,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate departureDate
     ) {
         try {
-            List<TripSearchDTO> trips = tripsService.searchAvailableTrips(routeId, departureDate);
+            List<TripDTO> trips = tripsService.searchAvailableTrips(routeId, departureDate);
             return ResponseEntity.ok(trips);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();

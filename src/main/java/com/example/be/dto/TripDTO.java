@@ -28,4 +28,5 @@ public class TripDTO {
     private Integer availableSeats;
     private List<TripSeatDTO> tripSeats;
     private BigDecimal ticketPrice;  // Thêm trường này
+    private Integer estimatedDuration;
 }

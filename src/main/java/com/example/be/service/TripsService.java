@@ -403,15 +403,15 @@ public class TripsService {
     }
 
     @Transactional(readOnly = true)
-    public List<TripSearchDTO> searchAvailableTrips(Integer routeId, LocalDate departureDate) {
+    public List<TripDTO> searchAvailableTrips(Integer routeId, LocalDate departureDate) {
         List<Trips> trips = tripsRepository.searchAvailableTrips(routeId, departureDate);
         return trips.stream()
                 .map(this::convertToSearchDTO)
                 .collect(Collectors.toList());
     }
 
-    private TripSearchDTO convertToSearchDTO(Trips trip) {
-        TripSearchDTO dto = new TripSearchDTO();
+    private TripDTO convertToSearchDTO(Trips trip) {
+        TripDTO dto = new TripDTO();
         dto.setTripId(trip.getTripId());
         dto.setRouteName(trip.getRouteSchedule().getRoute().getRouteName());
         dto.setScheduledDeparture(trip.getScheduledDeparture());
