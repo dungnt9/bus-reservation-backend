@@ -117,7 +117,7 @@ public class TripsController {
     @PutMapping("/{tripId}/status")
     public ResponseEntity<TripDTO> updateTripStatusAndTimes(
             @PathVariable Integer tripId,
-            @Valid @RequestBody TripStatusUpdateRequest request) {
+            @Valid @RequestBody TripDTO request) {
         try {
             TripDTO updatedTrip = tripsService.updateTripStatusAndTimes(tripId, request);
             return ResponseEntity.ok(updatedTrip);

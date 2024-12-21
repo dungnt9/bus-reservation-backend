@@ -495,7 +495,7 @@ public class TripsService {
     }
 
     @Transactional
-    public TripDTO updateTripStatusAndTimes(Integer tripId, TripStatusUpdateRequest request) {
+    public TripDTO updateTripStatusAndTimes(Integer tripId, TripDTO request) {
         // Validate trip exists
         Trips trip = getTripEntity(tripId);
         if (trip == null) {
