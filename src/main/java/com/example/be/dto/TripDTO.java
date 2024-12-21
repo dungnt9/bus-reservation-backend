@@ -18,6 +18,7 @@ public class TripDTO {
     private Integer assistantId;
     private String assistantName;
     private String assistantStatus;
+    private Integer vehicleId;
     private LocalDateTime scheduledDeparture;
     private LocalDateTime scheduledArrival;
     private LocalDateTime actualDeparture;

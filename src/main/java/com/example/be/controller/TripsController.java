@@ -54,14 +54,14 @@ public class TripsController {
     }
 
     @PostMapping
-    public ResponseEntity<TripDTO> createTrip(@Valid @RequestBody TripCreateRequest request) {
+    public ResponseEntity<TripDTO> createTrip(@Valid @RequestBody TripDTO request) {
         return ResponseEntity.ok(tripsService.createTrip(request));
     }
 
     @PutMapping("/{tripId}")
     public ResponseEntity<TripDTO> updateTrip(
             @PathVariable Integer tripId,
-            @Valid @RequestBody TripCreateRequest request) {
+            @Valid @RequestBody TripDTO request) {
         return ResponseEntity.ok(tripsService.updateTrip(tripId, request));
     }
 

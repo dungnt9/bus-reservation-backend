@@ -82,7 +82,7 @@ public class TripsService {
     }
 
     @Transactional
-    public TripDTO createTrip(TripCreateRequest request) {
+    public TripDTO createTrip(TripDTO request) {
         // Validate schedule exists and route is active
         RouteSchedules schedule = validateSchedule(request.getScheduleId());
 
@@ -135,7 +135,7 @@ public class TripsService {
     }
 
     @Transactional
-    public TripDTO updateTrip(Integer tripId, TripCreateRequest request) {
+    public TripDTO updateTrip(Integer tripId, TripDTO request) {
         Trips existingTrip = getTripEntity(tripId);
 
         // Update trip status if provided
