@@ -1,12 +1,10 @@
 package com.example.be.controller;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.be.model.Users;
 import com.example.be.service.UsersService;
-import jakarta.validation.constraints.Pattern;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,17 +34,17 @@ public class TripsController {
     }
 
     @GetMapping("/drivers/available")
-    public ResponseEntity<List<DriverDropdownDTO>> getAvailableDrivers() {
+    public ResponseEntity<List<DriverDTO>> getAvailableDrivers() {
         return ResponseEntity.ok(tripsService.getAvailableDrivers());
     }
 
     @GetMapping("/assistants/available")
-    public ResponseEntity<List<AssistantDropdownDTO>> getAvailableAssistants() {
+    public ResponseEntity<List<AssistantDTO>> getAvailableAssistants() {
         return ResponseEntity.ok(tripsService.getAvailableAssistants());
     }
 
     @GetMapping("/schedules/active")
-    public ResponseEntity<List<RouteScheduleDropdownDTO>> getActiveRouteSchedules() {
+    public ResponseEntity<List<RouteScheduleDTO>> getActiveRouteSchedules() {
         return ResponseEntity.ok(tripsService.getActiveRouteSchedules());
     }
 

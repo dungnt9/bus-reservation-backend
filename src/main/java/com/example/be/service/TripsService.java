@@ -41,11 +41,11 @@ public class TripsService {
     }
 
     // Get available drivers for dropdown
-    public List<DriverDropdownDTO> getAvailableDrivers() {
+    public List<DriverDTO> getAvailableDrivers() {
         return driversRepository.findAllNotDeleted().stream()
                 .filter(driver -> driver.getDriverStatus() == Drivers.DriverStatus.available)
                 .map(driver -> {
-                    DriverDropdownDTO dto = new DriverDropdownDTO();
+                    DriverDTO dto = new DriverDTO();
                     dto.setDriverId(driver.getDriverId());
                     dto.setFullName(driver.getUser().getFullName());
                     return dto;
@@ -54,11 +54,11 @@ public class TripsService {
     }
 
     // Get available assistants for dropdown
-    public List<AssistantDropdownDTO> getAvailableAssistants() {
+    public List<AssistantDTO> getAvailableAssistants() {
         return assistantsRepository.findAllNotDeleted().stream()
                 .filter(assistant -> assistant.getAssistantStatus() == Assistants.AssistantStatus.available)
                 .map(assistant -> {
-                    AssistantDropdownDTO dto = new AssistantDropdownDTO();
+                    AssistantDTO dto = new AssistantDTO();
                     dto.setAssistantId(assistant.getAssistantId());
                     dto.setFullName(assistant.getUser().getFullName());
                     return dto;
@@ -67,11 +67,11 @@ public class TripsService {
     }
 
     // Get active route schedules for dropdown
-    public List<RouteScheduleDropdownDTO> getActiveRouteSchedules() {
+    public List<RouteScheduleDTO> getActiveRouteSchedules() {
         return routeSchedulesRepository.findAllNotDeleted().stream()
                 .filter(schedule -> schedule.getRoute().getRouteStatus() == Routes.RouteStatus.active)
                 .map(schedule -> {
-                    RouteScheduleDropdownDTO dto = new RouteScheduleDropdownDTO();
+                    RouteScheduleDTO dto = new RouteScheduleDTO();
                     dto.setScheduleId(schedule.getScheduleId());
                     dto.setRouteName(schedule.getRoute().getRouteName());
                     dto.setDepartureTime(schedule.getDepartureTime());
