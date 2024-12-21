@@ -125,14 +125,14 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody CustomerRegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody CustomerDTO request) {
         try {
             // Create user
             Users user = new Users();
             user.setFullName(request.getFullName());
             user.setPhoneNumber(request.getPhoneNumber());
             user.setEmail(request.getEmail());
-            user.setPassword_hash(request.getPassword());
+            user.setPassword_hash(request.getPassword_hash());
             user.setGender(Users.Gender.valueOf(request.getGender().toLowerCase()));
             user.setAddress(request.getAddress());
             user.setDateOfBirth(request.getDateOfBirth());
