@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.stream.IntStream;
 import java.util.stream.Collectors;
 
+import com.example.be.model.TripSeats;
+import com.example.be.model.Trips;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +15,8 @@ import com.example.be.model.Vehicles;
 import com.example.be.model.VehicleSeats;
 import com.example.be.repository.VehiclesRepository;
 import com.example.be.repository.VehicleSeatsRepository;
+import com.example.be.repository.TripsRepository;
+import com.example.be.repository.TripSeatsRepository;
 import com.example.be.dto.VehicleDropdownDTO;
 
 @Service
@@ -20,6 +24,8 @@ public class VehiclesService {
 
     private final VehiclesRepository vehiclesRepository;
     private final VehicleSeatsRepository vehicleSeatsRepository;
+    private final TripsRepository tripsRepository;
+    private final TripSeatsRepository tripSeatsRepository;
 
     public List<VehicleDropdownDTO> getAvailableVehicles() {
         return vehiclesRepository.findAllNotDeleted().stream()
@@ -39,10 +45,14 @@ public class VehiclesService {
     // Constructor injection
     public VehiclesService(
             VehiclesRepository vehiclesRepository,
-            VehicleSeatsRepository vehicleSeatsRepository
+            VehicleSeatsRepository vehicleSeatsRepository,
+            TripsRepository tripsRepository,
+            TripSeatsRepository tripSeatsRepository
     ) {
         this.vehiclesRepository = vehiclesRepository;
         this.vehicleSeatsRepository = vehicleSeatsRepository;
+        this.tripsRepository = tripsRepository;
+        this.tripSeatsRepository = tripSeatsRepository;
     }
 
     @Transactional
@@ -139,5 +149,62 @@ public class VehiclesService {
         // Soft delete the vehicle
         vehicle.markAsDeleted();
         vehiclesRepository.save(vehicle);
+    }
+
+    public List<VehicleDropdownDTO> getVehiclesForTrip(Integer tripId) {
+        // Lấy tất cả xe có status = active
+        List<Vehicles> allActiveVehicles = vehiclesRepository.findAllNotDeleted().stream()
+                .filter(v -> v.getVehicleStatus() == Vehicles.VehicleStatus.active)
+                .collect(Collectors.toList());
+
+        // Lọc: chỉ lấy xe của chuyến hiện tại hoặc xe không trong chuyến nào
+        return allActiveVehicles.stream()
+                .filter(vehicle ->
+                        !isVehicleInAnyTrip(vehicle.getVehicleId()) ||
+                                isVehicleInThisTrip(vehicle.getVehicleId(), tripId))
+                .map(this::convertToDropdownDTO)
+                .collect(Collectors.toList());
+    }
+
+    private boolean isVehicleInUse(Vehicles vehicle) {
+        // Kiểm tra xem xe có đang được sử dụng trong chuyến xe nào không
+        return tripsRepository.findAllNotDeleted().stream()
+                .anyMatch(trip -> {
+                    List<TripSeats> tripSeats = tripSeatsRepository.findByTripId(trip.getTripId());
+                    return !tripSeats.isEmpty() &&
+                            tripSeats.get(0).getVehicleSeat().getVehicle().getVehicleId().equals(vehicle.getVehicleId()) &&
+                            trip.getTripStatus() == Trips.TripStatus.in_progress;
+                });
+    }
+
+    private boolean isVehicleUsedInTrip(Vehicles vehicle, Integer tripId) {
+        List<TripSeats> tripSeats = tripSeatsRepository.findByTripId(tripId);
+        return !tripSeats.isEmpty() &&
+                tripSeats.get(0).getVehicleSeat().getVehicle().getVehicleId().equals(vehicle.getVehicleId());
+    }
+
+    public List<VehicleDropdownDTO> getAvailableVehiclesNotInTrip() {
+        return vehiclesRepository.findAllNotDeleted().stream()
+                .filter(vehicle ->
+                        vehicle.getVehicleStatus() == Vehicles.VehicleStatus.active &&
+                                !isVehicleInAnyTrip(vehicle.getVehicleId()))
+                .map(this::convertToDropdownDTO)
+                .collect(Collectors.toList());
+    }
+
+    private boolean isVehicleInAnyTrip(Integer vehicleId) {
+        return tripsRepository.findAllNotDeleted().stream()
+                .filter(trip -> trip.getTripStatus() == Trips.TripStatus.in_progress)
+                .anyMatch(trip -> {
+                    List<TripSeats> tripSeats = tripSeatsRepository.findByTripId(trip.getTripId());
+                    return !tripSeats.isEmpty() &&
+                            tripSeats.get(0).getVehicleSeat().getVehicle().getVehicleId().equals(vehicleId);
+                });
+    }
+
+    private boolean isVehicleInThisTrip(Integer vehicleId, Integer tripId) {
+        List<TripSeats> tripSeats = tripSeatsRepository.findByTripId(tripId);
+        return !tripSeats.isEmpty() &&
+                tripSeats.get(0).getVehicleSeat().getVehicle().getVehicleId().equals(vehicleId);
     }
 }

@@ -60,4 +60,14 @@ public class VehiclesController {
     public ResponseEntity<List<VehicleDropdownDTO>> getAvailableVehicles() {
         return ResponseEntity.ok(vehiclesService.getAvailableVehicles());
     }
+
+    @GetMapping("/available-not-in-trip")
+    public ResponseEntity<List<VehicleDropdownDTO>> getAvailableVehiclesNotInTrip() {
+        return ResponseEntity.ok(vehiclesService.getAvailableVehiclesNotInTrip());
+    }
+
+    @GetMapping("/trips/{tripId}/vehicles/available")
+    public ResponseEntity<List<VehicleDropdownDTO>> getVehiclesForTrip(@PathVariable Integer tripId) {
+        return ResponseEntity.ok(vehiclesService.getVehiclesForTrip(tripId));
+    }
 }

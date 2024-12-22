@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.example.be.model.Users;
 import com.example.be.service.UsersService;
+import com.example.be.service.VehiclesService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +18,12 @@ import jakarta.validation.Valid;
 public class TripsController {
     private final TripsService tripsService;
     private final UsersService usersService;
+    private final VehiclesService vehiclesService;
 
-    public TripsController(TripsService tripsService, UsersService usersService) {
+    public TripsController(TripsService tripsService, UsersService usersService, VehiclesService vehiclesService) {
         this.tripsService = tripsService;
         this.usersService = usersService;
+        this.vehiclesService = vehiclesService;
     }
 
     @GetMapping
@@ -104,6 +107,15 @@ public class TripsController {
         return ResponseEntity.ok(tripsService.getAssistantForTrip(tripId));
     }
 
+    @GetMapping("/{tripId}/vehicles/available")
+    public ResponseEntity<List<VehicleDropdownDTO>> getVehiclesForTrip(@PathVariable Integer tripId) {
+        try {
+            List<VehicleDropdownDTO> vehicles = vehiclesService.getVehiclesForTrip(tripId);
+            return ResponseEntity.ok(vehicles);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 
 //    Dành cho tài xế, phụ xe
     @GetMapping("/my-trips/{userId}")
