@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -161,5 +162,62 @@ public class AuthController {
         private String code;
         private long timestamp;
         private int attempts;
+    }
+
+    // Quên mật khẩu
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody PhoneVerificationRequest request) {
+        try {
+            // Check if phone exists
+            Optional<Users> userOpt = usersRepository.findByPhoneNumber(request.getPhoneNumber());
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Phone number not found"));
+            }
+
+            // Generate OTP
+            String otp = String.format("%06d", new Random().nextInt(1000000));
+            otpStorage.put(request.getPhoneNumber(), new OTPData(otp, System.currentTimeMillis(), 0));
+
+            // For development - print OTP to console
+            System.out.println("Password Reset OTP for " + request.getPhoneNumber() + ": " + otp);
+
+            return ResponseEntity.ok(new MessageResponse("OTP sent successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Failed to send OTP: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        OTPData otpData = otpStorage.get(request.getPhoneNumber());
+        if (otpData == null) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("OTP expired or not found"));
+        }
+
+        // Validate OTP
+        if (!otpData.getCode().equals(request.getOtp())) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Invalid OTP"));
+        }
+
+        // Update password
+        Optional<Users> userOpt = usersRepository.findByPhoneNumber(request.getPhoneNumber());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("User not found"));
+        }
+
+        Users user = userOpt.get();
+        user.setPassword_hash(request.getNewPassword());
+        user.setUpdatedAt(LocalDateTime.now());
+        usersRepository.save(user);
+
+        // Clear OTP after successful password reset
+        otpStorage.remove(request.getPhoneNumber());
+
+        return ResponseEntity.ok(new MessageResponse("Password reset successful"));
     }
 }
