@@ -140,7 +140,22 @@ public class TripsService {
 
         // Update trip status if provided
         if (request.getTripStatus() != null) {
-            existingTrip.setTripStatus(Trips.TripStatus.valueOf(request.getTripStatus()));
+            Trips.TripStatus newStatus = Trips.TripStatus.valueOf(request.getTripStatus());
+
+            // Nếu chuyển sang trạng thái completed, cập nhật status của driver và assistant
+            if (newStatus == Trips.TripStatus.completed) {
+                // Cập nhật trạng thái tài xế thành available
+                Drivers driver = existingTrip.getDriver();
+                driver.setDriverStatus(Drivers.DriverStatus.available);
+                driversRepository.save(driver);
+
+                // Cập nhật trạng thái phụ xe thành available
+                Assistants assistant = existingTrip.getAssistant();
+                assistant.setAssistantStatus(Assistants.AssistantStatus.available);
+                assistantsRepository.save(assistant);
+            }
+
+            existingTrip.setTripStatus(newStatus);
         }
 
         // Update departure and arrival times if provided
