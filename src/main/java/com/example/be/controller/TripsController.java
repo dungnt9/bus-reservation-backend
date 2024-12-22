@@ -94,7 +94,15 @@ public class TripsController {
         }
     }
 
+    @GetMapping("/{tripId}/drivers")
+    public ResponseEntity<List<DriverDTO>> getDriversForTrip(@PathVariable Integer tripId) {
+        return ResponseEntity.ok(tripsService.getDriverForTrip(tripId));
+    }
 
+    @GetMapping("/{tripId}/assistants")
+    public ResponseEntity<List<AssistantDTO>> getAssistantsForTrip(@PathVariable Integer tripId) {
+        return ResponseEntity.ok(tripsService.getAssistantForTrip(tripId));
+    }
 
 
 //    Dành cho tài xế, phụ xe

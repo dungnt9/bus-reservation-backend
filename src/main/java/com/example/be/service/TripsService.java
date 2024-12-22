@@ -42,8 +42,12 @@ public class TripsService {
 
     // Get available drivers for dropdown
     public List<DriverDTO> getAvailableDrivers() {
-        return driversRepository.findAllNotDeleted().stream()
+        // Lấy tất cả tài xế có trạng thái available
+        List<Drivers> availableDrivers = driversRepository.findAllNotDeleted().stream()
                 .filter(driver -> driver.getDriverStatus() == Drivers.DriverStatus.available)
+                .collect(Collectors.toList());
+
+        return availableDrivers.stream()
                 .map(driver -> {
                     DriverDTO dto = new DriverDTO();
                     dto.setDriverId(driver.getDriverId());
@@ -51,6 +55,54 @@ public class TripsService {
                     return dto;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public List<DriverDTO> getDriverForTrip(Integer tripId) {
+        // Lấy danh sách gồm các tài xế available và tài xế của chuyến xe này
+        List<Drivers> drivers = driversRepository.findAllNotDeleted().stream()
+                .filter(driver ->
+                        driver.getDriverStatus() == Drivers.DriverStatus.available ||
+                                (driver.getDriverStatus() == Drivers.DriverStatus.on_trip && isDriverForTrip(driver, tripId))
+                )
+                .collect(Collectors.toList());
+
+        return drivers.stream()
+                .map(driver -> {
+                    DriverDTO dto = new DriverDTO();
+                    dto.setDriverId(driver.getDriverId());
+                    dto.setFullName(driver.getUser().getFullName());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private boolean isDriverForTrip(Drivers driver, Integer tripId) {
+        return tripsRepository.findByIdNotDeleted(tripId) != null &&
+                tripsRepository.findByIdNotDeleted(tripId).getDriver().getDriverId().equals(driver.getDriverId());
+    }
+
+    public List<AssistantDTO> getAssistantForTrip(Integer tripId) {
+        // Tương tự như getDriverForTrip
+        List<Assistants> assistants = assistantsRepository.findAllNotDeleted().stream()
+                .filter(assistant ->
+                        assistant.getAssistantStatus() == Assistants.AssistantStatus.available ||
+                                (assistant.getAssistantStatus() == Assistants.AssistantStatus.on_trip && isAssistantForTrip(assistant, tripId))
+                )
+                .collect(Collectors.toList());
+
+        return assistants.stream()
+                .map(assistant -> {
+                    AssistantDTO dto = new AssistantDTO();
+                    dto.setAssistantId(assistant.getAssistantId());
+                    dto.setFullName(assistant.getUser().getFullName());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private boolean isAssistantForTrip(Assistants assistant, Integer tripId) {
+        return tripsRepository.findByIdNotDeleted(tripId) != null &&
+                tripsRepository.findByIdNotDeleted(tripId).getAssistant().getAssistantId().equals(assistant.getAssistantId());
     }
 
     // Get available assistants for dropdown
@@ -138,27 +190,41 @@ public class TripsService {
     public TripDTO updateTrip(Integer tripId, TripDTO request) {
         Trips existingTrip = getTripEntity(tripId);
 
-        // Update trip status if provided
-        if (request.getTripStatus() != null) {
-            Trips.TripStatus newStatus = Trips.TripStatus.valueOf(request.getTripStatus());
+        // Update driver if changed
+        if (request.getDriverId() != null && !request.getDriverId().equals(existingTrip.getDriver().getDriverId())) {
+            // Set previous driver as available
+            existingTrip.getDriver().setDriverStatus(Drivers.DriverStatus.available);
+            driversRepository.save(existingTrip.getDriver());
 
-            // Nếu chuyển sang trạng thái completed, cập nhật status của driver và assistant
-            if (newStatus == Trips.TripStatus.completed) {
-                // Cập nhật trạng thái tài xế thành available
-                Drivers driver = existingTrip.getDriver();
-                driver.setDriverStatus(Drivers.DriverStatus.available);
-                driversRepository.save(driver);
-
-                // Cập nhật trạng thái phụ xe thành available
-                Assistants assistant = existingTrip.getAssistant();
-                assistant.setAssistantStatus(Assistants.AssistantStatus.available);
-                assistantsRepository.save(assistant);
-            }
-
-            existingTrip.setTripStatus(newStatus);
+            // Set new driver
+            Drivers newDriver = validateDriver(request.getDriverId());
+            newDriver.setDriverStatus(Drivers.DriverStatus.on_trip);
+            driversRepository.save(newDriver);
+            existingTrip.setDriver(newDriver);
         }
 
-        // Update departure and arrival times if provided
+        // Update assistant if changed
+        if (request.getAssistantId() != null && !request.getAssistantId().equals(existingTrip.getAssistant().getAssistantId())) {
+            // Set previous assistant as available
+            existingTrip.getAssistant().setAssistantStatus(Assistants.AssistantStatus.available);
+            assistantsRepository.save(existingTrip.getAssistant());
+
+            // Set new assistant
+            Assistants newAssistant = validateAssistant(request.getAssistantId());
+            newAssistant.setAssistantStatus(Assistants.AssistantStatus.on_trip);
+            assistantsRepository.save(newAssistant);
+            existingTrip.setAssistant(newAssistant);
+        }
+
+        // Update scheduled times if provided
+        if (request.getScheduledDeparture() != null) {
+            existingTrip.setScheduledDeparture(request.getScheduledDeparture());
+        }
+        if (request.getScheduledArrival() != null) {
+            existingTrip.setScheduledArrival(request.getScheduledArrival());
+        }
+
+        // Update actual times if provided
         if (request.getActualDeparture() != null) {
             existingTrip.setActualDeparture(request.getActualDeparture());
         }
@@ -166,17 +232,33 @@ public class TripsService {
             existingTrip.setActualArrival(request.getActualArrival());
         }
 
-        // Update driver if changed
-        updateDriverIfChanged(existingTrip, request.getDriverId());
+        // Update trip status if provided
+        if (request.getTripStatus() != null) {
+            existingTrip.setTripStatus(Trips.TripStatus.valueOf(request.getTripStatus()));
 
-        // Update assistant if changed
-        updateAssistantIfChanged(existingTrip, request.getAssistantId());
+            // If trip is completed or cancelled, set driver and assistant as available
+            if (request.getTripStatus().equals("completed") || request.getTripStatus().equals("cancelled")) {
+                existingTrip.getDriver().setDriverStatus(Drivers.DriverStatus.available);
+                existingTrip.getAssistant().setAssistantStatus(Assistants.AssistantStatus.available);
+                driversRepository.save(existingTrip.getDriver());
+                assistantsRepository.save(existingTrip.getAssistant());
+            }
+        }
 
         // Update trip seats if provided
-        updateTripSeatsIfProvided(request.getTripSeats());
+        if (request.getTripSeats() != null && !request.getTripSeats().isEmpty()) {
+            for (TripSeatDTO seatUpdate : request.getTripSeats()) {
+                TripSeats tripSeat = tripSeatsRepository.findByIdNotDeleted(seatUpdate.getTripSeatId());
+                if (tripSeat != null) {
+                    tripSeat.setTripSeatStatus(TripSeats.TripSeatStatus.valueOf(seatUpdate.getStatus()));
+                    tripSeatsRepository.save(tripSeat);
+                }
+            }
+        }
 
         existingTrip.setUpdatedAt(LocalDateTime.now());
-        return convertToDTO(tripsRepository.save(existingTrip));
+        Trips updatedTrip = tripsRepository.save(existingTrip);
+        return convertToDTO(updatedTrip);
     }
 
     @Transactional
