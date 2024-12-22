@@ -1,10 +1,12 @@
-// AdminsService.java
 package com.example.be.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,10 +48,17 @@ public class AdminsService {
         return dto;
     }
 
-    public List<AdminDTO> getAllAdminsDTO() {
-        return getAllAdmins().stream()
+    public Page<AdminDTO> getAllAdminsDTO(Pageable pageable) {
+        Page<Admins> adminPage = adminsRepository.findAllNotDeleted(pageable);
+        List<AdminDTO> adminDTOs = adminPage.getContent().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+
+        return new PageImpl<>(
+                adminDTOs,
+                pageable,
+                adminPage.getTotalElements()
+        );
     }
 
     public AdminDTO getAdminDTOById(Integer adminId) {
@@ -88,7 +97,7 @@ public class AdminsService {
     @Transactional
     protected Admins updateAdminEntity(Integer adminId, Admins adminDetails) {
         Admins existingAdmin = getAdminById(adminId);
-        Users updatedUser = usersService.updateUserForAdmin(
+        usersService.updateUserForAdmin(
                 existingAdmin.getUser().getUserId(),
                 adminDetails.getUser()
         );
@@ -110,9 +119,5 @@ public class AdminsService {
             throw new RuntimeException("Admin not found or has been deleted");
         }
         return admin;
-    }
-
-    public List<Admins> getAllAdmins() {
-        return adminsRepository.findAllNotDeleted();
     }
 }

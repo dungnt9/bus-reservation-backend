@@ -1,24 +1,16 @@
 package com.example.be.controller;
 
-import java.util.List; //thao tác với danh sách các phần tử
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.http.ResponseEntity;   //phản hồi HTTP: Body, Headers, HTTP Status
-
-import org.springframework.web.bind.annotation.GetMapping;  //Đánh dấu các phương thức xử lý HTTP request nào
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-
-import org.springframework.web.bind.annotation.PathVariable; //lấy giá trị từ URL để làm tham số method
-import org.springframework.web.bind.annotation.RequestBody; //Lấy dữ liệu từ request body vào một object để create/ update
-import org.springframework.web.bind.annotation.RequestMapping; //Base URL /api/admins cho tất cả các endpoint
-import org.springframework.web.bind.annotation.RestController; //nói class này là 1 RESTful Controller
-
+import com.example.be.dto.AdminDTO;
 import com.example.be.model.Admins;
 import com.example.be.service.AdminsService;
-import com.example.be.dto.AdminDTO;
 
-import jakarta.validation.Valid; //kích hoạt validate annotation validation (@NotNull,...) được định nghĩa trong class
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admins")
@@ -30,8 +22,11 @@ public class AdminsController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AdminDTO>> getAllAdmins() {
-        return ResponseEntity.ok(adminsService.getAllAdminsDTO());
+    public ResponseEntity<Page<AdminDTO>> getAllAdmins(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(adminsService.getAllAdminsDTO(pageable));
     }
 
     @GetMapping("/{adminId}")
