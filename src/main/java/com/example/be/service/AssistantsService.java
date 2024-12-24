@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -45,10 +48,17 @@ public class AssistantsService {
         return dto;
     }
 
-    public List<AssistantDTO> getAllAssistantsDTO() {
-        return getAllAssistants().stream()
+    public Page<AssistantDTO> getAllAssistantsDTO(Pageable pageable) {
+        Page<Assistants> assistantPage = assistantsRepository.findAllNotDeleted(pageable);
+        List<AssistantDTO> assistantDTOs = assistantPage.getContent().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+
+        return new PageImpl<>(
+                assistantDTOs,
+                pageable,
+                assistantPage.getTotalElements()
+        );
     }
 
     public AssistantDTO getAssistantDTOById(Integer assistantId) {
@@ -113,9 +123,5 @@ public class AssistantsService {
             throw new RuntimeException("Assistant not found or has been deleted");
         }
         return assistant;
-    }
-
-    public List<Assistants> getAllAssistants() {
-        return assistantsRepository.findAllNotDeleted();
     }
 }

@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -47,10 +50,17 @@ public class DriversService {
         return dto;
     }
 
-    public List<DriverDTO> getAllDriversDTO() {
-        return getAllDrivers().stream()
+    public Page<DriverDTO> getAllDriversDTO(Pageable pageable) {
+        Page<Drivers> driverPage = driversRepository.findAllNotDeleted(pageable);
+        List<DriverDTO> driverDTOs = driverPage.getContent().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+
+        return new PageImpl<>(
+                driverDTOs,
+                pageable,
+                driverPage.getTotalElements()
+        );
     }
 
     public DriverDTO getDriverDTOById(Integer driverId) {

@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -44,10 +47,17 @@ public class CustomersService {
         return dto;
     }
 
-    public List<CustomerDTO> getAllCustomersDTO() {
-        return getAllCustomers().stream()
+    public Page<CustomerDTO> getAllCustomersDTO(Pageable pageable) {
+        Page<Customers> customerPage = customersRepository.findAllNotDeleted(pageable);
+        List<CustomerDTO> customerDTOs = customerPage.getContent().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+
+        return new PageImpl<>(
+                customerDTOs,
+                pageable,
+                customerPage.getTotalElements()
+        );
     }
 
     public CustomerDTO getCustomerDTOById(Integer customerId) {
@@ -108,9 +118,5 @@ public class CustomersService {
             throw new RuntimeException("Customer not found or has been deleted");
         }
         return customer;
-    }
-
-    public List<Customers> getAllCustomers() {
-        return customersRepository.findAllNotDeleted();
     }
 }
