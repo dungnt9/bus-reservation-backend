@@ -3,6 +3,9 @@ package com.example.be.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.be.model.Routes;
@@ -20,10 +23,9 @@ public class RoutesService {
         this.routeSchedulesRepository = routeSchedulesRepository;
     }
 
-    public List<RouteDTO> getAllRoutes() {
-        return routesRepository.findAllNotDeleted().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<RouteDTO> getAllRoutes(Pageable pageable) {
+        Page<Routes> routePage = routesRepository.findAllNotDeleted(pageable);
+        return routePage.map(this::convertToDTO);
     }
 
     public RouteDTO getRouteById(Integer routeId) {

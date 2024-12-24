@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 
 import com.example.be.model.TripSeats;
 import com.example.be.model.Trips;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,8 +88,8 @@ public class VehiclesService {
         vehicleSeatsRepository.saveAll(seats);
     }
 
-    public List getAllVehicles() {
-        return vehiclesRepository.findAllNotDeleted();
+    public Page<Vehicles> getAllVehicles(Pageable pageable) {
+        return vehiclesRepository.findAllNotDeleted(pageable);
     }
 
     public Vehicles getVehicleById(Integer vehicleId) {
