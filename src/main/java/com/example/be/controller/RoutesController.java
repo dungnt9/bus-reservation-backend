@@ -28,6 +28,11 @@ public class RoutesController {
         return ResponseEntity.ok(routesService.getAllRoutes(pageable));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<RouteDTO>> getAllRoutesWithoutPagination() {
+        return ResponseEntity.ok(routesService.getAllRoutesWithoutPagination());
+    }
+
     @GetMapping("/{routeId}")
     public ResponseEntity<RouteDTO> getRouteById(@PathVariable Integer routeId) {
         return ResponseEntity.ok(routesService.getRouteById(routeId));

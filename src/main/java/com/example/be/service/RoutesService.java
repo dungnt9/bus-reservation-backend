@@ -28,6 +28,13 @@ public class RoutesService {
         return routePage.map(this::convertToDTO);
     }
 
+    public List<RouteDTO> getAllRoutesWithoutPagination() {
+        List<Routes> routes = routesRepository.findAllNotDeleted();
+        return routes.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public RouteDTO getRouteById(Integer routeId) {
         Routes route = routesRepository.findByIdNotDeleted(routeId);
         if (route == null) {
