@@ -46,6 +46,30 @@ public class InvoicesController {
         return ResponseEntity.ok(invoicesService.getAllInvoicesDTO(pageable));
     }
 
+    @PostMapping("/customer/{userId}")
+    public ResponseEntity<InvoiceDTO> createCustomerInvoice(
+            @PathVariable Integer userId,
+            @RequestBody CreateInvoiceRequest request) {
+        try {
+            // Tìm customer theo userId
+            Optional<Customers> customerOpt = customersRepository.findByUserId(userId);
+            if (customerOpt.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Tạo invoice với customerId
+            return ResponseEntity.ok(invoicesService.createInvoice(
+                    customerOpt.get().getCustomerId(),
+                    request.getTripId(),
+                    request.getSelectedSeats(),
+                    request.getPaymentStatus(),
+                    request.getPaymentMethod()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @GetMapping("/{invoiceId}")
     public ResponseEntity<InvoiceDTO> getInvoiceById(@PathVariable Integer invoiceId) {
         return ResponseEntity.ok(invoicesService.getInvoiceById(invoiceId));

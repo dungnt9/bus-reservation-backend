@@ -57,14 +57,12 @@ public class SecurityConfig {
                     auth.requestMatchers(HttpMethod.GET, "/api/trip-seats/**").permitAll();
                     auth.requestMatchers("/api/users/**").permitAll();
 
+                    // Customer endpoints
+                    auth.requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "CUSTOMER");
                     auth.requestMatchers("/api/invoices/customer/**").hasAnyRole("CUSTOMER");
 
                     // Driver/Assistant endpoints
                     auth.requestMatchers("/api/trips/**").hasAnyRole("ADMIN", "DRIVER", "ASSISTANT");
-
-                    // Customer endpoints
-                    auth.requestMatchers("/api/customers/**").hasAnyRole("ADMIN", "CUSTOMER");
-                    auth.requestMatchers("/api/invoices/**").hasAnyRole("ADMIN");
 
                     // Tất cả các request khác yêu cầu xác thực
                     // Admin có quyền truy cập tất cả API
