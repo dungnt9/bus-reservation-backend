@@ -2,9 +2,12 @@ package com.example.be.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.example.be.dto.TicketDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -195,5 +198,71 @@ public class InvoicesService {
         return invoicesRepository.findByCustomerIdNotDeleted(customerId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public List<TicketDTO> getCustomerTickets(
+            Integer customerId,
+            Integer invoiceId,
+            String seatNumber) {
+
+        List<Invoices> invoices;
+        if (invoiceId != null) {
+            // If invoiceId is provided, only get that specific invoice
+            invoices = Collections.singletonList(
+                    invoicesRepository.findByIdNotDeleted(invoiceId)
+            );
+        } else {
+            // Otherwise get all customer's invoices
+            invoices = invoicesRepository.findByCustomerIdNotDeleted(customerId);
+        }
+
+        List<TicketDTO> tickets = new ArrayList<>();
+
+        for (Invoices invoice : invoices) {
+            // Get invoice details
+            List<InvoiceDetails> details = invoiceDetailsRepository.findByInvoiceId(invoice.getInvoiceId());
+
+            for (InvoiceDetails detail : details) {
+                // If seatNumber is provided, filter by it
+                if (seatNumber != null &&
+                        !detail.getTripSeat().getVehicleSeat().getSeatNumber().equals(seatNumber)) {
+                    continue;
+                }
+
+                TicketDTO ticket = convertToTicketDTO(detail);
+                tickets.add(ticket);
+            }
+        }
+
+        // Sort by invoice date descending
+        tickets.sort((t1, t2) -> t2.getInvoiceDate().compareTo(t1.getInvoiceDate()));
+
+        return tickets;
+    }
+
+    private TicketDTO convertToTicketDTO(InvoiceDetails detail) {
+        TicketDTO ticket = new TicketDTO();
+        Invoices invoice = detail.getInvoice();
+
+        // Set customer info
+        ticket.setFullName(invoice.getCustomer().getUser().getFullName());
+        ticket.setPhoneNumber(invoice.getCustomer().getUser().getPhoneNumber());
+
+        // Set trip info
+        TripSeats tripSeat = detail.getTripSeat();
+        Trips trip = tripSeat.getTrip();
+        Routes route = trip.getRouteSchedule().getRoute();
+
+        ticket.setRouteName(route.getRouteName());
+        ticket.setScheduledDeparture(trip.getScheduledDeparture());
+        ticket.setScheduledArrival(trip.getScheduledArrival());
+        ticket.setSeatNumber(tripSeat.getVehicleSeat().getSeatNumber());
+
+        // Set invoice info
+        ticket.setInvoiceId(invoice.getInvoiceId());
+        ticket.setInvoiceDate(invoice.getInvoiceDate());
+        ticket.setTicketPrice(route.getTicketPrice());
+
+        return ticket;
     }
 }
