@@ -1,12 +1,15 @@
 package com.example.be.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -48,17 +51,78 @@ public class AssistantsService {
         return dto;
     }
 
-    public Page<AssistantDTO> getAllAssistantsDTO(Pageable pageable) {
-        Page<Assistants> assistantPage = assistantsRepository.findAllNotDeleted(pageable);
-        List<AssistantDTO> assistantDTOs = assistantPage.getContent().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<AssistantDTO> getAllAssistantsDTO(
+            Pageable pageable,
+            String fullName,
+            String phoneNumber,
+            String email,
+            String gender,
+            String address,
+            String dateOfBirth,
+            String assistantStatus
+    ) {
+        Specification<Assistants> spec = (root, query, criteriaBuilder) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
 
-        return new PageImpl<>(
-                assistantDTOs,
-                pageable,
-                assistantPage.getTotalElements()
-        );
+            if (fullName != null && !fullName.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("user").get("fullName")),
+                        "%" + fullName.toLowerCase() + "%"
+                ));
+            }
+
+            if (phoneNumber != null && !phoneNumber.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        root.get("user").get("phoneNumber"),
+                        "%" + phoneNumber + "%"
+                ));
+            }
+
+            if (email != null && !email.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("user").get("email")),
+                        "%" + email.toLowerCase() + "%"
+                ));
+            }
+
+            if (gender != null && !gender.isEmpty()) {
+                predicates.add(criteriaBuilder.equal(
+                        root.get("user").get("gender"),
+                        Users.Gender.valueOf(gender.toLowerCase())
+                ));
+            }
+
+            if (address != null && !address.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("user").get("address")),
+                        "%" + address.toLowerCase() + "%"
+                ));
+            }
+
+            if (dateOfBirth != null && !dateOfBirth.isEmpty()) {
+                try {
+                    LocalDate date = LocalDate.parse(dateOfBirth);
+                    predicates.add(criteriaBuilder.equal(root.get("user").get("dateOfBirth"), date));
+                } catch (Exception e) {
+                    System.err.println("Invalid date format: " + dateOfBirth);
+                }
+            }
+
+            if (assistantStatus != null && !assistantStatus.isEmpty()) {
+                try {
+                    Assistants.AssistantStatus status = Assistants.AssistantStatus.valueOf(assistantStatus.toLowerCase());
+                    predicates.add(criteriaBuilder.equal(root.get("assistantStatus"), status));
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Invalid assistant status: " + assistantStatus);
+                }
+            }
+
+            predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
+            return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        Page<Assistants> assistantPage = assistantsRepository.findAll(spec, pageable);
+        return assistantPage.map(this::convertToDTO);
     }
 
     public AssistantDTO getAssistantDTOById(Integer assistantId) {

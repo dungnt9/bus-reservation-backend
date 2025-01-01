@@ -27,9 +27,26 @@ public class AssistantsController {
     @GetMapping
     public ResponseEntity<Page<AssistantDTO>> getAllAssistants(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String fullName,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String address,
+            @RequestParam(required = false) String dateOfBirth,
+            @RequestParam(required = false) String assistantStatus
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(assistantsService.getAllAssistantsDTO(pageable));
+        return ResponseEntity.ok(assistantsService.getAllAssistantsDTO(
+                pageable,
+                fullName,
+                phoneNumber,
+                email,
+                gender,
+                address,
+                dateOfBirth,
+                assistantStatus
+        ));
     }
 
     @GetMapping("/{assistantId}")
