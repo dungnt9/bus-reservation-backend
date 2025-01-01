@@ -28,9 +28,18 @@ public class VehiclesController {
     @GetMapping
     public ResponseEntity<Page<Vehicles>> getAllVehicles(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String plateNumber,
+            @RequestParam(required = false) String seatCapacity,
+            @RequestParam(required = false) String vehicleStatus
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(vehiclesService.getAllVehicles(pageable));
+        return ResponseEntity.ok(vehiclesService.getAllVehicles(
+                pageable,
+                plateNumber,
+                seatCapacity,
+                vehicleStatus
+        ));
     }
 
     @GetMapping("/{vehicleId}")

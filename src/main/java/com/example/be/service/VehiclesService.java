@@ -10,6 +10,7 @@ import com.example.be.model.TripSeats;
 import com.example.be.model.Trips;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -88,8 +89,54 @@ public class VehiclesService {
         vehicleSeatsRepository.saveAll(seats);
     }
 
-    public Page<Vehicles> getAllVehicles(Pageable pageable) {
-        return vehiclesRepository.findAllNotDeleted(pageable);
+    public Page<Vehicles> getAllVehicles(
+            Pageable pageable,
+            String plateNumber,
+            String seatCapacity,
+            String vehicleStatus
+    ) {
+        Specification<Vehicles> spec = (root, query, criteriaBuilder) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            if (plateNumber != null && !plateNumber.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("plateNumber")),
+                        "%" + plateNumber.toLowerCase() + "%"
+                ));
+            }
+
+            if (seatCapacity != null && !seatCapacity.isEmpty()) {
+                try {
+                    Integer capacity = Integer.parseInt(seatCapacity);
+                    predicates.add(criteriaBuilder.equal(root.get("seatCapacity"), capacity));
+                } catch (NumberFormatException e) {
+                    System.err.println("Invalid seat capacity format: " + seatCapacity);
+                }
+            }
+
+            if (vehicleStatus != null && !vehicleStatus.isEmpty()) {
+                // Convert Vietnamese status to English
+                String englishStatus = switch (vehicleStatus.toLowerCase()) {
+                    case "hoạt động" -> "active";
+                    case "bảo dưỡng" -> "maintenance";
+                    case "ngừng hoạt động" -> "retired";
+                    default -> vehicleStatus.toLowerCase();
+                };
+
+                try {
+                    Vehicles.VehicleStatus status = Vehicles.VehicleStatus.valueOf(englishStatus);
+                    predicates.add(criteriaBuilder.equal(root.get("vehicleStatus"), status));
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Invalid vehicle status: " + vehicleStatus);
+                }
+            }
+
+            predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
+
+            return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        return vehiclesRepository.findAll(spec, pageable);
     }
 
     public Vehicles getVehicleById(Integer vehicleId) {
