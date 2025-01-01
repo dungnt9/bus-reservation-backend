@@ -46,10 +46,4 @@ public class AssistantsController {
     public ResponseEntity<AssistantDTO> updateAssistant(@PathVariable Integer assistantId, @Valid @RequestBody Assistants assistant) {
         return ResponseEntity.ok(assistantsService.updateAssistant(assistantId, assistant));
     }
-
-    @DeleteMapping("/{assistantId}")
-    public ResponseEntity<Void> deleteAssistant(@PathVariable Integer assistantId) {
-        assistantsService.deleteAssistant(assistantId);
-        return ResponseEntity.noContent().build();
-    }
 }

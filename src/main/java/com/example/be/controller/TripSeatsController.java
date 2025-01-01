@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
 
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,11 +46,5 @@ public class TripSeatsController {
     @PutMapping("/{tripSeatId}")
     public ResponseEntity<TripSeats> updateTripSeat(@PathVariable Integer tripSeatId, @Valid @RequestBody TripSeats tripSeat) {
         return ResponseEntity.ok(tripSeatsService.updateTripSeat(tripSeatId, tripSeat));
-    }
-
-    @DeleteMapping("/{tripSeatId}")
-    public ResponseEntity<Void> deleteTripSeat(@PathVariable Integer tripSeatId) {
-        tripSeatsService.deleteTripSeat(tripSeatId);
-        return ResponseEntity.noContent().build();
     }
 }

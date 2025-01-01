@@ -47,10 +47,4 @@ public class RoutesController {
     public ResponseEntity<RouteDTO> updateRoute(@PathVariable Integer routeId, @Valid @RequestBody RouteDTO routeDTO) {
         return ResponseEntity.ok(routesService.updateRoute(routeId, routeDTO));
     }
-
-    @DeleteMapping("/{routeId}")
-    public ResponseEntity<Void> deleteRoute(@PathVariable Integer routeId) {
-        routesService.deleteRoute(routeId);
-        return ResponseEntity.noContent().build();
-    }
 }

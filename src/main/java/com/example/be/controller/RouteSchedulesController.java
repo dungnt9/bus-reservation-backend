@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
 
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -51,11 +50,5 @@ public class RouteSchedulesController {
             @Valid @RequestBody RouteSchedules routeSchedule
     ) {
         return ResponseEntity.ok(routeSchedulesService.updateRouteSchedule(scheduleId, routeSchedule));
-    }
-
-    @DeleteMapping("/{scheduleId}")
-    public ResponseEntity<Void> deleteRouteSchedule(@PathVariable Integer scheduleId) {
-        routeSchedulesService.deleteRouteSchedule(scheduleId);
-        return ResponseEntity.noContent().build();
     }
 }

@@ -48,10 +48,4 @@ public class DriversController {
     public ResponseEntity<DriverDTO> updateDriver(@PathVariable Integer driverId, @Valid @RequestBody Drivers driver) {
         return ResponseEntity.ok(driversService.updateDriver(driverId, driver));
     }
-
-    @DeleteMapping("/{driverId}")
-    public ResponseEntity<Void> deleteDriver(@PathVariable Integer driverId) {
-        driversService.deleteDriver(driverId);
-        return ResponseEntity.noContent().build();
-    }
 }

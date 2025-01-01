@@ -104,14 +104,6 @@ public class CustomersService {
         return customersRepository.save(existingCustomer);
     }
 
-    @Transactional
-    public void deleteCustomer(Integer customerId) {
-        Customers customer = getCustomerById(customerId);
-        customer.markAsDeleted();
-        customersRepository.save(customer);
-        usersService.softDeleteUserForCustomer(customer.getUser().getUserId());
-    }
-
     public Customers getCustomerById(Integer customerId) {
         Customers customer = customersRepository.findByIdNotDeleted(customerId);
         if (customer == null) {

@@ -49,10 +49,4 @@ public class TripSeatsService {
 
         return tripSeatsRepository.save(tripSeat);
     }
-
-    public void deleteTripSeat(Integer tripSeatId) {
-        TripSeats tripSeat = getTripSeatById(tripSeatId);
-        tripSeat.markAsDeleted();
-        tripSeatsRepository.save(tripSeat);
-    }
 }

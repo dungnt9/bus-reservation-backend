@@ -44,10 +44,4 @@ public class InvoiceDetailsService {
 
         return invoiceDetailsRepository.save(invoiceDetail);
     }
-
-    public void deleteInvoiceDetail(Integer detailId) {
-        InvoiceDetails invoiceDetail = getInvoiceDetailById(detailId);
-        invoiceDetail.markAsDeleted();
-        invoiceDetailsRepository.save(invoiceDetail);
-    }
 }

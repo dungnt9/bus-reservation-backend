@@ -96,12 +96,6 @@ public class InvoicesService {
         return convertToDTO(savedInvoice);
     }
 
-    public List<InvoiceDTO> getAllInvoices() {
-        return invoicesRepository.findAllNotDeleted().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
     public Page<InvoiceDTO> getAllInvoicesDTO(Pageable pageable) {
         Page<Invoices> invoicePage = invoicesRepository.findAllNotDeleted(pageable);
         List<InvoiceDTO> invoiceDTOs = invoicePage.getContent().stream()
@@ -128,27 +122,6 @@ public class InvoicesService {
         invoice.setUpdatedAt(LocalDateTime.now());
 
         return convertToDTO(invoicesRepository.save(invoice));
-    }
-
-    @Transactional
-    public void deleteInvoice(Integer invoiceId) {
-        Invoices invoice = findInvoiceById(invoiceId);
-
-        // Soft delete invoice details and update trip seats
-        List<InvoiceDetails> details = invoiceDetailsRepository.findByInvoiceId(invoiceId);
-        for (InvoiceDetails detail : details) {
-            // Update trip seat status back to available
-            TripSeats tripSeat = detail.getTripSeat();
-            tripSeat.setTripSeatStatus(TripSeats.TripSeatStatus.available);
-            tripSeatsRepository.save(tripSeat);
-
-            detail.markAsDeleted();
-            invoiceDetailsRepository.save(detail);
-        }
-
-        // Soft delete invoice
-        invoice.markAsDeleted();
-        invoicesRepository.save(invoice);
     }
 
     private Invoices findInvoiceById(Integer invoiceId) {

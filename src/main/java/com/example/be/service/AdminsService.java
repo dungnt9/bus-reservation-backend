@@ -163,14 +163,6 @@ public class AdminsService {
         return adminsRepository.save(existingAdmin);
     }
 
-    @Transactional
-    public void deleteAdmin(Integer adminId) {
-        Admins admin = getAdminById(adminId);
-        admin.markAsDeleted();
-        adminsRepository.save(admin);
-        usersService.softDeleteUserForAdmin(admin.getUser().getUserId());
-    }
-
     public Admins getAdminById(Integer adminId) {
         Admins admin = adminsRepository.findByIdNotDeleted(adminId);
         if (admin == null) {

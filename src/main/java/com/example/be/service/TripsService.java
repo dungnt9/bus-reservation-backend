@@ -261,28 +261,6 @@ public class TripsService {
         return convertToDTO(updatedTrip);
     }
 
-    @Transactional
-    public void deleteTrip(Integer tripId) {
-        Trips trip = getTripEntity(tripId);
-
-        // Soft delete associated trip seats
-        List<TripSeats> tripSeats = tripSeatsRepository.findByTripId(tripId);
-        tripSeats.forEach(seat -> {
-            seat.markAsDeleted();
-            tripSeatsRepository.save(seat);
-        });
-
-        // Update driver and assistant status
-        trip.getDriver().setDriverStatus(Drivers.DriverStatus.available);
-        trip.getAssistant().setAssistantStatus(Assistants.AssistantStatus.available);
-        driversRepository.save(trip.getDriver());
-        assistantsRepository.save(trip.getAssistant());
-
-        // Soft delete trip
-        trip.markAsDeleted();
-        tripsRepository.save(trip);
-    }
-
     // Private helper methods
     private RouteSchedules validateSchedule(Integer scheduleId) {
         RouteSchedules schedule = routeSchedulesRepository.findByIdNotDeleted(scheduleId);
@@ -345,44 +323,6 @@ public class TripsService {
         }).collect(Collectors.toList());
 
         tripSeatsRepository.saveAll(tripSeats);
-    }
-
-    private void updateDriverIfChanged(Trips trip, Integer newDriverId) {
-        if (newDriverId != null && !trip.getDriver().getDriverId().equals(newDriverId)) {
-            trip.getDriver().setDriverStatus(Drivers.DriverStatus.available);
-            driversRepository.save(trip.getDriver());
-
-            Drivers newDriver = validateDriver(newDriverId);
-            newDriver.setDriverStatus(Drivers.DriverStatus.on_trip);
-            driversRepository.save(newDriver);
-            trip.setDriver(newDriver);
-        }
-    }
-
-    private void updateAssistantIfChanged(Trips trip, Integer newAssistantId) {
-        if (newAssistantId != null && !trip.getAssistant().getAssistantId().equals(newAssistantId)) {
-            trip.getAssistant().setAssistantStatus(Assistants.AssistantStatus.available);
-            assistantsRepository.save(trip.getAssistant());
-
-            Assistants newAssistant = validateAssistant(newAssistantId);
-            newAssistant.setAssistantStatus(Assistants.AssistantStatus.on_trip);
-            assistantsRepository.save(newAssistant);
-            trip.setAssistant(newAssistant);
-        }
-    }
-
-    private void updateTripSeatsIfProvided(List<TripSeatDTO> seatUpdates) {
-        if (seatUpdates != null) {
-            for (TripSeatDTO seatUpdate : seatUpdates) {
-                TripSeats tripSeat = tripSeatsRepository.findByIdNotDeleted(seatUpdate.getTripSeatId());
-                if (tripSeat != null) {
-                    // Chuyển đổi từ String trong DTO sang enum TripSeatStatus
-                    TripSeats.TripSeatStatus status = TripSeats.TripSeatStatus.valueOf(seatUpdate.getStatus());
-                    tripSeat.setTripSeatStatus(status);
-                    tripSeatsRepository.save(tripSeat);
-                }
-            }
-        }
     }
 
     private Trips getTripEntity(Integer tripId) {

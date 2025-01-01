@@ -80,15 +80,6 @@ public class VehicleSeatsService {
         return convertToDTO(vehicleSeatsRepository.save(seat));
     }
 
-    public void deleteVehicleSeat(Integer vehicleSeatId) {
-        VehicleSeats seat = vehicleSeatsRepository.findByIdNotDeleted(vehicleSeatId);
-        if (seat == null) {
-            throw new RuntimeException("Vehicle Seat not found or has been deleted");
-        }
-        seat.markAsDeleted();
-        vehicleSeatsRepository.save(seat);
-    }
-
     private VehicleSeatDTO convertToDTO(VehicleSeats seat) {
         VehicleSeatDTO dto = new VehicleSeatDTO();
         dto.setVehicleSeatId(seat.getVehicleSeatId());

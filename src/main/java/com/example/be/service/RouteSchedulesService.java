@@ -64,16 +64,6 @@ public class RouteSchedulesService {
         return convertToDTO(updatedSchedule);
     }
 
-    @Transactional
-    public void deleteRouteSchedule(Integer scheduleId) {
-        RouteSchedules routeSchedule = routeSchedulesRepository.findByIdNotDeleted(scheduleId);
-        if (routeSchedule == null) {
-            throw new RuntimeException("Route Schedule not found or has been deleted");
-        }
-        routeSchedule.markAsDeleted();
-        routeSchedulesRepository.save(routeSchedule);
-    }
-
     // Conversion method to DTO
     private RouteScheduleDTO convertToDTO(RouteSchedules routeSchedule) {
         RouteScheduleDTO dto = new RouteScheduleDTO();

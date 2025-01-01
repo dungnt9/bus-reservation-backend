@@ -109,14 +109,6 @@ public class AssistantsService {
         return assistantsRepository.save(existingAssistant);
     }
 
-    @Transactional
-    public void deleteAssistant(Integer assistantId) {
-        Assistants assistant = getAssistantById(assistantId);
-        assistant.markAsDeleted();
-        assistantsRepository.save(assistant);
-        usersService.softDeleteUserForAssistant(assistant.getUser().getUserId());
-    }
-
     public Assistants getAssistantById(Integer assistantId) {
         Assistants assistant = assistantsRepository.findByIdNotDeleted(assistantId);
         if (assistant == null) {

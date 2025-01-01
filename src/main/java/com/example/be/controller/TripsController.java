@@ -68,12 +68,6 @@ public class TripsController {
         return ResponseEntity.ok(tripsService.updateTrip(tripId, request));
     }
 
-    @DeleteMapping("/{tripId}")
-    public ResponseEntity<Void> deleteTrip(@PathVariable Integer tripId) {
-        tripsService.deleteTrip(tripId);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping("/search")
     public ResponseEntity<List<TripDTO>> searchTrips(
             @RequestParam Integer routeId,

@@ -48,12 +48,6 @@ public class VehiclesController {
         return ResponseEntity.ok(vehiclesService.updateVehicle(vehicleId, vehicle));
     }
 
-    @DeleteMapping("/{vehicleId}")
-    public ResponseEntity<Void> deleteVehicle(@PathVariable Integer vehicleId) {
-        vehiclesService.deleteVehicle(vehicleId);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping("/available")
     public ResponseEntity<List<VehicleDropdownDTO>> getAvailableVehicles() {
         return ResponseEntity.ok(vehiclesService.getAvailableVehicles());

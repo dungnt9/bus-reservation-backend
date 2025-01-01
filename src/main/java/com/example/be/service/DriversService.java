@@ -117,23 +117,11 @@ public class DriversService {
         return driversRepository.save(existingDriver);
     }
 
-    @Transactional
-    public void deleteDriver(Integer driverId) {
-        Drivers driver = getDriverById(driverId);
-        driver.markAsDeleted();
-        driversRepository.save(driver);
-        usersService.softDeleteUserForDriver(driver.getUser().getUserId());
-    }
-
     public Drivers getDriverById(Integer driverId) {
         Drivers driver = driversRepository.findByIdNotDeleted(driverId);
         if (driver == null) {
             throw new RuntimeException("Driver not found or has been deleted");
         }
         return driver;
-    }
-
-    public List<Drivers> getAllDrivers() {
-        return driversRepository.findAllNotDeleted();
     }
 }

@@ -99,12 +99,6 @@ public class InvoicesController {
         return ResponseEntity.ok(invoicesService.updateInvoice(invoiceId, paymentStatus, paymentMethod));
     }
 
-    @DeleteMapping("/{invoiceId}")
-    public ResponseEntity<Void> deleteInvoice(@PathVariable Integer invoiceId) {
-        invoicesService.deleteInvoice(invoiceId);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping("/customer/{userId}")
     public ResponseEntity<List<InvoiceDTO>> getCustomerInvoices(@PathVariable Integer userId) {
         try {

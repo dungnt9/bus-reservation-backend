@@ -139,20 +139,6 @@ public class VehiclesService {
         }
     }
 
-    @Transactional
-    public void deleteVehicle(Integer vehicleId) {
-        Vehicles vehicle = getVehicleById(vehicleId);
-
-        // Soft delete associated seats
-        List<VehicleSeats> seats = vehicleSeatsRepository.findByVehicle(vehicle);
-        seats.forEach(seat -> seat.markAsDeleted());
-        vehicleSeatsRepository.saveAll(seats);
-
-        // Soft delete the vehicle
-        vehicle.markAsDeleted();
-        vehiclesRepository.save(vehicle);
-    }
-
     public List<VehicleDropdownDTO> getVehiclesForTrip(Integer tripId) {
         // Lấy tất cả xe có status = active
         List<Vehicles> allActiveVehicles = vehiclesRepository.findAllNotDeleted().stream()
@@ -166,23 +152,6 @@ public class VehiclesService {
                                 isVehicleInThisTrip(vehicle.getVehicleId(), tripId))
                 .map(this::convertToDropdownDTO)
                 .collect(Collectors.toList());
-    }
-
-    private boolean isVehicleInUse(Vehicles vehicle) {
-        // Kiểm tra xem xe có đang được sử dụng trong chuyến xe nào không
-        return tripsRepository.findAllNotDeleted().stream()
-                .anyMatch(trip -> {
-                    List<TripSeats> tripSeats = tripSeatsRepository.findByTripId(trip.getTripId());
-                    return !tripSeats.isEmpty() &&
-                            tripSeats.get(0).getVehicleSeat().getVehicle().getVehicleId().equals(vehicle.getVehicleId()) &&
-                            trip.getTripStatus() == Trips.TripStatus.in_progress;
-                });
-    }
-
-    private boolean isVehicleUsedInTrip(Vehicles vehicle, Integer tripId) {
-        List<TripSeats> tripSeats = tripSeatsRepository.findByTripId(tripId);
-        return !tripSeats.isEmpty() &&
-                tripSeats.get(0).getVehicleSeat().getVehicle().getVehicleId().equals(vehicle.getVehicleId());
     }
 
     public List<VehicleDropdownDTO> getAvailableVehiclesNotInTrip() {

@@ -46,10 +46,4 @@ public class VehicleSeatsController {
             @Valid @RequestBody VehicleSeatDTO vehicleSeatDTO) {
         return ResponseEntity.ok(vehicleSeatsService.updateVehicleSeat(vehicleSeatId, vehicleSeatDTO));
     }
-
-    @DeleteMapping("/{vehicleSeatId}")
-    public ResponseEntity<Void> deleteVehicleSeat(@PathVariable Integer vehicleSeatId) {
-        vehicleSeatsService.deleteVehicleSeat(vehicleSeatId);
-        return ResponseEntity.noContent().build();
-    }
 }

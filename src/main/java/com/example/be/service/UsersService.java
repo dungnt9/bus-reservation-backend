@@ -146,34 +146,6 @@ public class UsersService {
         return usersRepository.save(existingUser);
     }
 
-    @Transactional
-    public void softDeleteUserForDriver(Integer userId) {
-        Users user = getUserById(userId);
-        user.markAsDeleted();
-        usersRepository.save(user);
-    }
-
-    @Transactional
-    public void softDeleteUserForCustomer(Integer userId) {
-        Users user = getUserById(userId);
-        user.markAsDeleted();
-        usersRepository.save(user);
-    }
-
-    @Transactional
-    public void softDeleteUserForAssistant(Integer userId) {
-        Users user = getUserById(userId);
-        user.markAsDeleted();
-        usersRepository.save(user);
-    }
-
-    @Transactional
-    public void softDeleteUserForAdmin(Integer userId) {
-        Users user = getUserById(userId);
-        user.markAsDeleted();
-        usersRepository.save(user);
-    }
-
     public Users getUserById(Integer userId) {
         Users user = usersRepository.findByIdNotDeleted(userId);
         if (user == null) {

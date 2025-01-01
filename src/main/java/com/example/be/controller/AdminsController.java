@@ -58,10 +58,4 @@ public class AdminsController {
     public ResponseEntity<AdminDTO> updateAdmin(@PathVariable Integer adminId, @Valid @RequestBody Admins admin) {
         return ResponseEntity.ok(adminsService.updateAdmin(adminId, admin));
     }
-
-    @DeleteMapping("/{adminId}")
-    public ResponseEntity<Void> deleteAdmin(@PathVariable Integer adminId) {
-        adminsService.deleteAdmin(adminId);
-        return ResponseEntity.noContent().build();
-    }
 }

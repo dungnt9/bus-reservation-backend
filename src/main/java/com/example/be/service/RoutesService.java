@@ -68,23 +68,6 @@ public class RoutesService {
         return convertToDTO(routesRepository.save(route));
     }
 
-    @Transactional
-    public void deleteRoute(Integer routeId) {
-        Routes route = routesRepository.findByIdNotDeleted(routeId);
-        if (route == null) {
-            throw new RuntimeException("Route not found or has been deleted");
-        }
-
-        // Soft delete the route
-        LocalDateTime now = LocalDateTime.now();
-        route.setDeletedAt(now);
-        route.setUpdatedAt(now);
-        routesRepository.save(route);
-
-        // Cascade soft delete to related route schedules
-        routeSchedulesRepository.softDeleteByRouteId(routeId, now);
-    }
-
     private RouteDTO convertToDTO(Routes route) {
         RouteDTO dto = new RouteDTO();
         dto.setRouteId(route.getRouteId());
