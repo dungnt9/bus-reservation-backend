@@ -1,6 +1,7 @@
 package com.example.be.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import com.example.be.dto.TicketDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,8 +98,106 @@ public class InvoicesService {
         return convertToDTO(savedInvoice);
     }
 
-    public Page<InvoiceDTO> getAllInvoicesDTO(Pageable pageable) {
-        Page<Invoices> invoicePage = invoicesRepository.findAllNotDeleted(pageable);
+    public Page<InvoiceDTO> getAllInvoicesDTO(
+            Pageable pageable,
+            Integer invoiceId,
+            Integer tripId,
+            String plateNumber,
+            Integer customerId,
+            String fullName,
+            String phoneNumber,
+            String paymentStatus,
+            String paymentMethod,
+            String invoiceDate
+    ) {
+        Specification<Invoices> spec = (root, query, criteriaBuilder) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            // Add isNull condition for deletedAt
+            predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
+
+            if (invoiceId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("invoiceId"), invoiceId));
+            }
+
+            if (tripId != null) {
+                predicates.add(criteriaBuilder.equal(
+                        root.join("invoiceDetails").join("tripSeat").get("trip").get("tripId"),
+                        tripId
+                ));
+            }
+
+            if (plateNumber != null && !plateNumber.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(
+                                root.join("invoiceDetails")
+                                        .join("tripSeat")
+                                        .join("trip")
+                                        .join("vehicle")
+                                        .get("plateNumber")
+                        ),
+                        "%" + plateNumber.toLowerCase() + "%"
+                ));
+            }
+
+            if (customerId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("customer").get("customerId"), customerId));
+            }
+
+            if (fullName != null && !fullName.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("customer").get("user").get("fullName")),
+                        "%" + fullName.toLowerCase() + "%"
+                ));
+            }
+
+            if (phoneNumber != null && !phoneNumber.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        root.get("customer").get("user").get("phoneNumber"),
+                        "%" + phoneNumber + "%"
+                ));
+            }
+
+            if (paymentStatus != null && !paymentStatus.isEmpty()) {
+                String status = paymentStatus.toLowerCase();
+                if (status.equals("chờ thanh toán")) status = "pending";
+                else if (status.equals("đã thanh toán")) status = "paid";
+                predicates.add(criteriaBuilder.equal(
+                        root.get("paymentStatus"),
+                        Invoices.PaymentStatus.valueOf(status)
+                ));
+            }
+
+            if (paymentMethod != null && !paymentMethod.isEmpty()) {
+                String method = paymentMethod.toLowerCase();
+                if (method.equals("tiền mặt")) method = "cash";
+                else if (method.equals("thẻ")) method = "card";
+                predicates.add(criteriaBuilder.equal(
+                        root.get("paymentMethod"),
+                        Invoices.PaymentMethod.valueOf(method)
+                ));
+            }
+
+            if (invoiceDate != null && !invoiceDate.isEmpty()) {
+                try {
+                    LocalDate date = LocalDate.parse(invoiceDate);
+                    LocalDateTime startOfDay = date.atStartOfDay();
+                    LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+                    predicates.add(criteriaBuilder.between(
+                            root.get("invoiceDate"),
+                            startOfDay,
+                            endOfDay
+                    ));
+                } catch (Exception e) {
+                    System.err.println("Invalid date format: " + invoiceDate);
+                }
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        Page<Invoices> invoicePage = invoicesRepository.findAll(spec, pageable);
         List<InvoiceDTO> invoiceDTOs = invoicePage.getContent().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());

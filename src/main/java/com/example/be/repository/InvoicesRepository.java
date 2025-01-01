@@ -1,15 +1,17 @@
 package com.example.be.repository;
 
+import com.example.be.model.Admins;
 import com.example.be.model.Invoices;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface InvoicesRepository extends JpaRepository<Invoices, Integer> {
+public interface InvoicesRepository extends JpaRepository<Invoices, Integer>, JpaSpecificationExecutor<Invoices> {
     @Query("SELECT i FROM Invoices i WHERE i.deletedAt IS NULL")
     List<Invoices> findAllNotDeleted();
 

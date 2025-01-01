@@ -46,9 +46,30 @@ public class InvoicesController {
     @GetMapping
     public ResponseEntity<Page<InvoiceDTO>> getAllInvoices(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Integer invoiceId,
+            @RequestParam(required = false) Integer tripId,
+            @RequestParam(required = false) String plateNumber,
+            @RequestParam(required = false) Integer customerId,
+            @RequestParam(required = false) String fullName,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String paymentStatus,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) String invoiceDate
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(invoicesService.getAllInvoicesDTO(pageable));
+        return ResponseEntity.ok(invoicesService.getAllInvoicesDTO(
+                pageable,
+                invoiceId,
+                tripId,
+                plateNumber,
+                customerId,
+                fullName,
+                phoneNumber,
+                paymentStatus,
+                paymentMethod,
+                invoiceDate
+        ));
     }
 
     @PostMapping("/customer/{userId}")
