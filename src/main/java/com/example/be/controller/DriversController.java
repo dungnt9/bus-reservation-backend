@@ -29,9 +29,32 @@ public class DriversController {
     @GetMapping
     public ResponseEntity<Page<DriverDTO>> getAllDrivers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String fullName,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String address,
+            @RequestParam(required = false) String dateOfBirth,
+            @RequestParam(required = false) String licenseNumber,
+            @RequestParam(required = false) String licenseClass,
+            @RequestParam(required = false) String licenseExpiry,
+            @RequestParam(required = false) String driverStatus
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(driversService.getAllDriversDTO(pageable));
+        return ResponseEntity.ok(driversService.getAllDriversDTO(
+                pageable,
+                fullName,
+                phoneNumber,
+                email,
+                gender,
+                address,
+                dateOfBirth,
+                licenseNumber,
+                licenseClass,
+                licenseExpiry,
+                driverStatus
+        ));
     }
 
     @GetMapping("/{driverId}")
