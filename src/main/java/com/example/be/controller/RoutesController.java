@@ -1,5 +1,6 @@
 package com.example.be.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -23,9 +24,22 @@ public class RoutesController {
     @GetMapping
     public ResponseEntity<Page<RouteDTO>> getAllRoutes(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String routeName,
+            @RequestParam(required = false) BigDecimal ticketPrice,
+            @RequestParam(required = false) BigDecimal distance,
+            @RequestParam(required = false) Integer estimatedDuration,
+            @RequestParam(required = false) String routeStatus
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(routesService.getAllRoutes(pageable));
+        return ResponseEntity.ok(routesService.getAllRoutes(
+                pageable,
+                routeName,
+                ticketPrice,
+                distance,
+                estimatedDuration,
+                routeStatus
+        ));
     }
 
     @GetMapping("/all")
