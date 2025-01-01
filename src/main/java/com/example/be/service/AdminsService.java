@@ -1,12 +1,15 @@
 package com.example.be.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,17 +51,72 @@ public class AdminsService {
         return dto;
     }
 
-    public Page<AdminDTO> getAllAdminsDTO(Pageable pageable) {
-        Page<Admins> adminPage = adminsRepository.findAllNotDeleted(pageable);
-        List<AdminDTO> adminDTOs = adminPage.getContent().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<AdminDTO> getAllAdminsDTO(
+            Pageable pageable,
+            String fullName,
+            String phoneNumber,
+            String email,
+            String gender,
+            String address,
+            String dateOfBirth
+    ) {
+        // Create Specification for dynamic filtering
+        Specification<Admins> spec = (root, query, criteriaBuilder) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
 
-        return new PageImpl<>(
-                adminDTOs,
-                pageable,
-                adminPage.getTotalElements()
-        );
+            if (fullName != null && !fullName.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("user").get("fullName")),
+                        "%" + fullName.toLowerCase() + "%"
+                ));
+            }
+
+            if (phoneNumber != null && !phoneNumber.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        root.get("user").get("phoneNumber"),
+                        "%" + phoneNumber + "%"
+                ));
+            }
+
+            if (email != null && !email.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("user").get("email")),
+                        "%" + email.toLowerCase() + "%"
+                ));
+            }
+
+            if (gender != null && !gender.isEmpty()) {
+                predicates.add(criteriaBuilder.equal(
+                        root.get("user").get("gender"),
+                        Users.Gender.valueOf(gender.toLowerCase())
+                ));
+            }
+
+            if (address != null && !address.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("user").get("address")),
+                        "%" + address.toLowerCase() + "%"
+                ));
+            }
+
+            if (dateOfBirth != null && !dateOfBirth.isEmpty()) {
+                try {
+                    LocalDate date = LocalDate.parse(dateOfBirth);
+                    predicates.add(criteriaBuilder.equal(root.get("user").get("dateOfBirth"), date));
+                } catch (Exception e) {
+                    // Handle invalid date format
+                    System.err.println("Invalid date format: " + dateOfBirth);
+                }
+            }
+
+            // Add condition for non-deleted records
+            predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
+
+            return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        Page<Admins> adminPage = adminsRepository.findAll(spec, pageable);
+        return adminPage.map(this::convertToDTO);
     }
 
     public AdminDTO getAdminDTOById(Integer adminId) {
