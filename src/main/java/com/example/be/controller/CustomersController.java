@@ -29,9 +29,24 @@ public class CustomersController {
     @GetMapping
     public ResponseEntity<Page<CustomerDTO>> getAllCustomers(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String fullName,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String address,
+            @RequestParam(required = false) String dateOfBirth
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(customersService.getAllCustomersDTO(pageable));
+        return ResponseEntity.ok(customersService.getAllCustomersDTO(
+                pageable,
+                fullName,
+                phoneNumber,
+                email,
+                gender,
+                address,
+                dateOfBirth
+        ));
     }
 
     @GetMapping("/{customerId}")
