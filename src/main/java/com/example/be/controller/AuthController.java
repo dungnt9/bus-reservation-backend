@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.example.be.dto.PhoneChangeRequest;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -219,5 +221,96 @@ public class AuthController {
         otpStorage.remove(request.getPhoneNumber());
 
         return ResponseEntity.ok(new MessageResponse("Password reset successful"));
+    }
+
+    @PostMapping("/request-phone-change")
+    public ResponseEntity<?> requestPhoneChange(@Valid @RequestBody PhoneChangeRequest request) {
+        try {
+            // Validate current user exists
+            Optional<Users> userOpt = usersRepository.findById(request.getUserId());
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("User not found"));
+            }
+
+            Users user = userOpt.get();
+
+            // Validate password
+            if (!request.getPassword().equals(user.getPassword_hash())) {
+                return ResponseEntity.status(401)
+                        .body(new MessageResponse("Invalid password"));
+            }
+
+            // Check if new phone number is already registered
+            if (usersRepository.findByPhoneNumber(request.getNewPhone()).isPresent()) {
+                return ResponseEntity.status(409)
+                        .body(new MessageResponse("Phone number already registered"));
+            }
+
+            // Generate OTP
+            String otp = String.format("%06d", new Random().nextInt(1000000));
+
+            // Store OTP with timestamp
+            otpStorage.put(request.getNewPhone(), new OTPData(otp, System.currentTimeMillis(), 0));
+
+            // For development - print OTP to console
+            System.out.println("Phone Change OTP for " + request.getNewPhone() + ": " + otp);
+
+            return ResponseEntity.ok(new MessageResponse("OTP sent successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Failed to process request: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/verify-phone-change")
+    public ResponseEntity<?> verifyPhoneChange(@Valid @RequestBody OTPVerificationRequest request) {
+        try {
+            // Get stored OTP data
+            OTPData otpData = otpStorage.get(request.getPhoneNumber());
+            if (otpData == null) {
+                return ResponseEntity.status(408)
+                        .body(new MessageResponse("OTP expired or not found"));
+            }
+
+            // Check expiration (5 minutes)
+            if (System.currentTimeMillis() - otpData.getTimestamp() > 300000) {
+                otpStorage.remove(request.getPhoneNumber());
+                return ResponseEntity.status(408)
+                        .body(new MessageResponse("OTP expired"));
+            }
+
+            // Validate OTP
+            if (!otpData.getCode().equals(request.getOtp())) {
+                otpData.setAttempts(otpData.getAttempts() + 1);
+                if (otpData.getAttempts() >= 3) {
+                    otpStorage.remove(request.getPhoneNumber());
+                    return ResponseEntity.badRequest()
+                            .body(new MessageResponse("Too many failed attempts"));
+                }
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Invalid OTP"));
+            }
+
+            // Update user's phone number
+            Optional<Users> userOpt = usersRepository.findById(request.getUserId());
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new MessageResponse("User not found"));
+            }
+
+            Users user = userOpt.get();
+            user.setPhoneNumber(request.getPhoneNumber());
+            user.setUpdatedAt(LocalDateTime.now());
+            usersRepository.save(user);
+
+            // Clear OTP after successful verification
+            otpStorage.remove(request.getPhoneNumber());
+
+            return ResponseEntity.ok(new MessageResponse("Phone number updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Failed to verify OTP: " + e.getMessage()));
+        }
     }
 }
