@@ -1,9 +1,15 @@
 package com.example.be.service;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,10 +40,52 @@ public class RouteSchedulesService {
         return convertToDTO(savedSchedule);
     }
 
-    public List<RouteScheduleDTO> getAllRouteSchedules() {
-        return routeSchedulesRepository.findAllNotDeleted().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public Page<RouteScheduleDTO> getAllRouteSchedules(
+            Pageable pageable,
+            Integer routeId,
+            String routeName,
+            String departureTime,
+            List<String> daysOfWeek
+    ) {
+        Specification<RouteSchedules> spec = (root, query, criteriaBuilder) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
+
+            if (routeId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("route").get("routeId"), routeId));
+            }
+
+            if (routeName != null && !routeName.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("route").get("routeName")),
+                        "%" + routeName.toLowerCase() + "%"
+                ));
+            }
+
+            if (departureTime != null && !departureTime.isEmpty()) {
+                try {
+                    LocalTime time = LocalTime.parse(departureTime);
+                    predicates.add(criteriaBuilder.equal(root.get("departureTime"), time));
+                } catch (Exception e) {
+                    System.err.println("Invalid time format: " + departureTime);
+                }
+            }
+
+            if (daysOfWeek != null && !daysOfWeek.isEmpty()) {
+                List<Predicate> dayPredicates = daysOfWeek.stream()
+                        .map(day -> criteriaBuilder.like(root.get("dayOfWeek"), "%" + day + "%"))
+                        .collect(Collectors.toList());
+
+                // All selected days must be present (AND condition)
+                predicates.addAll(dayPredicates);
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        Page<RouteSchedules> schedulesPage = routeSchedulesRepository.findAll(spec, pageable);
+        return schedulesPage.map(this::convertToDTO);
     }
 
     public RouteScheduleDTO getRouteScheduleById(Integer scheduleId) {
