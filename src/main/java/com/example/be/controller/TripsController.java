@@ -1,11 +1,15 @@
 package com.example.be.controller;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.be.model.Users;
 import com.example.be.service.UsersService;
 import com.example.be.service.VehiclesService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +30,7 @@ public class TripsController {
         this.vehiclesService = vehiclesService;
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public ResponseEntity<List<TripDTO>> getAllTrips() {
         return ResponseEntity.ok(tripsService.getAllTrips());
     }
@@ -34,6 +38,31 @@ public class TripsController {
     @GetMapping("/{tripId}")
     public ResponseEntity<TripDTO> getTripById(@PathVariable Integer tripId) {
         return ResponseEntity.ok(tripsService.getTripById(tripId));
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<TripDTO>> getAllTripsWithFilters(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Integer tripId,
+            @RequestParam(required = false) String routeName,
+            @RequestParam(required = false) String driverName,
+            @RequestParam(required = false) String assistantName,
+            @RequestParam(required = false) String vehiclePlateNumber,
+            @RequestParam(required = false) String tripStatus,
+            @RequestParam(required = false) Integer totalSeats,
+            @RequestParam(required = false) Integer availableSeats,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime scheduledDeparture,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime scheduledArrival,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime actualDeparture,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime actualArrival
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(tripsService.getAllTripsWithFilters(
+                pageable, tripId, routeName, driverName, assistantName,
+                vehiclePlateNumber, tripStatus, totalSeats, availableSeats,
+                scheduledDeparture, scheduledArrival, actualDeparture, actualArrival
+        ));
     }
 
     @GetMapping("/drivers/available")

@@ -1,8 +1,10 @@
 package com.example.be.repository;
 
+import com.example.be.model.Admins;
 import com.example.be.model.TripSeats;
 import com.example.be.model.Trips;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,7 +13,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface TripsRepository extends JpaRepository<Trips, Integer> {
+public interface TripsRepository extends JpaRepository<Trips, Integer>, JpaSpecificationExecutor<Trips> {
     @Query("SELECT t FROM Trips t WHERE t.deletedAt IS NULL")
     List<Trips> findAllNotDeleted();
 

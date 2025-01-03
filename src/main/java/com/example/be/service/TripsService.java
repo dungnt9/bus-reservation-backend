@@ -6,6 +6,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,6 +60,122 @@ public class TripsService {
                     return dto;
                 })
                 .collect(Collectors.toList());
+    }
+
+    public Page<TripDTO> getAllTripsWithFilters(
+            Pageable pageable,
+            Integer tripId,
+            String routeName,
+            String driverName,
+            String assistantName,
+            String vehiclePlateNumber,
+            String tripStatus,
+            Integer totalSeats,
+            Integer availableSeats,
+            LocalDateTime scheduledDeparture,
+            LocalDateTime scheduledArrival,
+            LocalDateTime actualDeparture,
+            LocalDateTime actualArrival
+    ) {
+        Specification<Trips> spec = (root, query, criteriaBuilder) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+
+            // Base condition: not deleted
+            predicates.add(criteriaBuilder.isNull(root.get("deletedAt")));
+
+            if (tripId != null) {
+                predicates.add(criteriaBuilder.equal(root.get("tripId"), tripId));
+            }
+
+            if (routeName != null && !routeName.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("routeSchedule").get("route").get("routeName")),
+                        "%" + routeName.toLowerCase() + "%"
+                ));
+            }
+
+            if (driverName != null && !driverName.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("driver").get("user").get("fullName")),
+                        "%" + driverName.toLowerCase() + "%"
+                ));
+            }
+
+            if (assistantName != null && !assistantName.isEmpty()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("assistant").get("user").get("fullName")),
+                        "%" + assistantName.toLowerCase() + "%"
+                ));
+            }
+
+            if (vehiclePlateNumber != null && !vehiclePlateNumber.isEmpty()) {
+                // Create a subquery to get all trips that have any seats with the matching vehicle plate number
+                Subquery<Integer> tripIdSubquery = query.subquery(Integer.class);
+                Root<TripSeats> tripSeatsRoot = tripIdSubquery.from(TripSeats.class);
+
+                tripIdSubquery.select(tripSeatsRoot.get("trip").get("tripId"))
+                        .where(criteriaBuilder.like(
+                                criteriaBuilder.lower(tripSeatsRoot
+                                        .get("vehicleSeat")
+                                        .get("vehicle")
+                                        .get("plateNumber")),
+                                "%" + vehiclePlateNumber.toLowerCase() + "%"
+                        ));
+
+                predicates.add(criteriaBuilder.in(root.get("tripId")).value(tripIdSubquery));
+            }
+
+            if (tripStatus != null && !tripStatus.isEmpty()) {
+                predicates.add(criteriaBuilder.equal(
+                        root.get("tripStatus"),
+                        Trips.TripStatus.valueOf(tripStatus.toLowerCase())
+                ));
+            }
+
+            if (scheduledDeparture != null) {
+                predicates.add(criteriaBuilder.equal(root.get("scheduledDeparture"), scheduledDeparture));
+            }
+
+            if (scheduledArrival != null) {
+                predicates.add(criteriaBuilder.equal(root.get("scheduledArrival"), scheduledArrival));
+            }
+
+            if (actualDeparture != null) {
+                predicates.add(criteriaBuilder.equal(root.get("actualDeparture"), actualDeparture));
+            }
+
+            if (actualArrival != null) {
+                predicates.add(criteriaBuilder.equal(root.get("actualArrival"), actualArrival));
+            }
+
+            if (totalSeats != null) {
+                Subquery<Long> totalSeatsSubquery = query.subquery(Long.class);
+                Root<TripSeats> tripSeatsRoot = totalSeatsSubquery.from(TripSeats.class);
+                totalSeatsSubquery.select(criteriaBuilder.count(tripSeatsRoot))
+                        .where(criteriaBuilder.equal(tripSeatsRoot.get("trip"), root));
+
+                predicates.add(criteriaBuilder.equal(totalSeatsSubquery, totalSeats));
+            }
+
+            if (availableSeats != null) {
+                Subquery<Long> availableSeatsSubquery = query.subquery(Long.class);
+                Root<TripSeats> tripSeatsRoot = availableSeatsSubquery.from(TripSeats.class);
+                availableSeatsSubquery.select(criteriaBuilder.count(tripSeatsRoot))
+                        .where(
+                                criteriaBuilder.and(
+                                        criteriaBuilder.equal(tripSeatsRoot.get("trip"), root),
+                                        criteriaBuilder.equal(tripSeatsRoot.get("tripSeatStatus"), TripSeats.TripSeatStatus.available)
+                                )
+                        );
+
+                predicates.add(criteriaBuilder.equal(availableSeatsSubquery, availableSeats));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+
+        Page<Trips> tripsPage = tripsRepository.findAll(spec, pageable);
+        return tripsPage.map(this::convertToDTO);
     }
 
     public List<DriverDTO> getDriverForTrip(Integer tripId) {
