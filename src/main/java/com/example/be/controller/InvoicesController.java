@@ -9,6 +9,7 @@ import com.example.be.repository.CustomersRepository;
 import com.example.be.security.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwt;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -115,9 +116,8 @@ public class InvoicesController {
     @PutMapping("/{invoiceId}")
     public ResponseEntity<InvoiceDTO> updateInvoice(
             @PathVariable Integer invoiceId,
-            @RequestParam String paymentStatus,
-            @RequestParam String paymentMethod) {
-        return ResponseEntity.ok(invoicesService.updateInvoice(invoiceId, paymentStatus, paymentMethod));
+            @Valid @RequestBody InvoiceDTO request) {
+        return ResponseEntity.ok(invoicesService.updateInvoice(invoiceId, request.getPaymentStatus(), request.getPaymentMethod()));
     }
 
     @GetMapping("/customer/{userId}")
