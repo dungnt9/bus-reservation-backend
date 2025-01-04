@@ -64,6 +64,9 @@ public class SecurityConfig {
                     // Driver/Assistant endpoints
                     auth.requestMatchers("/api/trips/**").hasAnyRole("ADMIN", "DRIVER", "ASSISTANT");
 
+                    // Thêm endpoints của trip-scheduler cho ADMIN
+                    auth.requestMatchers("/api/trip-scheduler/**").hasRole("ADMIN");
+
                     // Tất cả các request khác yêu cầu xác thực
                     // Admin có quyền truy cập tất cả API
                     auth.anyRequest().hasRole("ADMIN");
