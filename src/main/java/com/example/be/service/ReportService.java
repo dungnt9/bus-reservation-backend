@@ -1,6 +1,7 @@
 package com.example.be.service;
 
 import com.example.be.model.Trips;
+import com.example.be.model.Invoices.PaymentStatus;
 import org.springframework.stereotype.Service;
 import com.example.be.repository.*;
 import java.time.LocalDate;
@@ -34,7 +35,7 @@ public class ReportService {
 
         Map<String, Object> data = new HashMap<>();
 
-        // Revenue metrics
+        // Revenue metrics - only paid invoices
         data.put("totalRevenue", getTotalRevenue(startDateTime, endDateTime));
         data.put("revenueByRoute", getRevenueByRoute(startDateTime, endDateTime));
         data.put("revenueByPaymentMethod", getRevenueByPaymentMethod(startDateTime, endDateTime));
@@ -59,20 +60,24 @@ public class ReportService {
 
     private BigDecimal getTotalRevenue(LocalDateTime start, LocalDateTime end) {
         return invoicesRepository.findAll().stream()
-                .filter(i -> i.getInvoiceDate().isAfter(start) && i.getInvoiceDate().isBefore(end))
+                .filter(i -> i.getInvoiceDate().isAfter(start) &&
+                        i.getInvoiceDate().isBefore(end) &&
+                        i.getPaymentStatus() == PaymentStatus.paid)
                 .map(i -> i.getTotalPrice())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private Map<String, BigDecimal> getRevenueByRoute(LocalDateTime start, LocalDateTime end) {
-        // Implementation logic for revenue by route
+        // Implementation logic for revenue by route with paid invoices only
         // You'll need to join invoices with trips and routes
         return new HashMap<>(); // Placeholder
     }
 
     private Map<String, BigDecimal> getRevenueByPaymentMethod(LocalDateTime start, LocalDateTime end) {
         return invoicesRepository.findAll().stream()
-                .filter(i -> i.getInvoiceDate().isAfter(start) && i.getInvoiceDate().isBefore(end))
+                .filter(i -> i.getInvoiceDate().isAfter(start) &&
+                        i.getInvoiceDate().isBefore(end) &&
+                        i.getPaymentStatus() == PaymentStatus.paid)
                 .collect(Collectors.groupingBy(
                         i -> i.getPaymentMethod().toString(),
                         Collectors.mapping(
@@ -84,7 +89,9 @@ public class ReportService {
 
     private Map<LocalDate, BigDecimal> getRevenueOverTime(LocalDateTime start, LocalDateTime end) {
         return invoicesRepository.findAll().stream()
-                .filter(i -> i.getInvoiceDate().isAfter(start) && i.getInvoiceDate().isBefore(end))
+                .filter(i -> i.getInvoiceDate().isAfter(start) &&
+                        i.getInvoiceDate().isBefore(end) &&
+                        i.getPaymentStatus() == PaymentStatus.paid)
                 .collect(Collectors.groupingBy(
                         i -> i.getInvoiceDate().toLocalDate(),
                         Collectors.mapping(
@@ -94,6 +101,7 @@ public class ReportService {
                 ));
     }
 
+    // Other methods remain unchanged as they don't deal with revenue
     private Map<String, Long> getTripStats(LocalDateTime start, LocalDateTime end) {
         Map<String, Long> stats = new HashMap<>();
         List<Trips> trips = tripsRepository.findAll().stream()
