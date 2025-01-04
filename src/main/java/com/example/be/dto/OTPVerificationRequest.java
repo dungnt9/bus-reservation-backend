@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Pattern;
 
 @Data
 public class OTPVerificationRequest {
-    @NotNull(message = "User ID is required")
     private Integer userId;
 
     @NotBlank(message = "Phone number is required")
